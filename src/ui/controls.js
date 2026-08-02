@@ -673,6 +673,7 @@ export class PlayerUI {
   togglePlaylist() {
     this.plPanel.classList.toggle('open')
     this._updatePlOverlay()
+    this._updateTopBarVisibility()
     if (this.plPanel.classList.contains('open')) this.renderPlaylist()
   }
 
@@ -684,6 +685,7 @@ export class PlayerUI {
       (window.matchMedia('(max-height: 500px)').matches && window.matchMedia('(orientation: landscape)').matches)
     this.plPanel.classList.toggle('open', !mobile)
     this._updatePlOverlay()
+    this._updateTopBarVisibility()
     if (!mobile) this.renderPlaylist()
   }
 
@@ -691,6 +693,14 @@ export class PlayerUI {
     const mobile = window.matchMedia('(max-width: 820px)').matches ||
       (window.matchMedia('(max-height: 500px)').matches && window.matchMedia('(orientation: landscape)').matches)
     this.plOverlay.classList.toggle('show', this.plPanel.classList.contains('open') && mobile)
+  }
+
+  _updateTopBarVisibility() {
+    const mobile = window.matchMedia('(max-width: 820px)').matches ||
+      (window.matchMedia('(max-height: 500px)').matches && window.matchMedia('(orientation: landscape)').matches)
+    if (mobile) {
+      this.topBar.style.display = this.plPanel.classList.contains('open') ? 'none' : 'flex'
+    }
   }
 
   /* ================= 播放列表渲染 ================= */

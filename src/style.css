@@ -435,9 +435,9 @@ input[type="range"]::-moz-range-thumb {
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   display: none;
-  pointer-events: auto;
+  pointer-events: none;
 }
-.pl-overlay.show { display: block; }
+.pl-overlay.show { display: block; pointer-events: auto; }
 
 .playlist-panel {
   width: 0;
