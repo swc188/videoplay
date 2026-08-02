@@ -49,7 +49,8 @@ export function isSupportedLocalFile(file) {
   if (!file) return false
   const e = extname(file.name)
   if (HLS_EXTS.has(e) || DASH_EXTS.has(e)) return false
-  return file.type.startsWith('video/') || file.type.startsWith('audio/') || isSupportedExtName(file.name)
+  const type = file.type || ''
+  return type.startsWith('video/') || type.startsWith('audio/') || isSupportedExtName(file.name)
 }
 
 /**
