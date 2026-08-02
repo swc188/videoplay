@@ -40,9 +40,9 @@ export class PlayerUI {
     this.subtitle = new SubtitleManager(this.subLayer, this.video)
     this._bind()
     this._applyPrefs()
-    // 默认不显示首屏，直接展示播放列表
+    // 默认不显示首屏，直接展示播放列表（移动端折叠为抽屉按钮）
     this.emptyState.classList.add('hidden')
-    this.plPanel.classList.add('open')
+    this._syncPlaylistLayout()
     this._initLocalLibrary()
   }
 
@@ -133,7 +133,11 @@ export class PlayerUI {
     this.fileInput = el('input', { type: 'file', accept: FILE_PICKER_ACCEPT, multiple: '', style: 'display:none' })
     this.folderInput = el('input', { type: 'file', webkitdirectory: '', multiple: '', style: 'display:none' })
     this.subInput = el('input', { type: 'file', accept: '.srt,.vtt', style: 'display:none' })
+
+    // 移动端抽屉遮罩（放在末尾，确保 z-index 控制层级）
+    this.plOverlay = el('div', { class: 'pl-overlay' })
     this.root.append(this.fileInput, this.folderInput, this.subInput)
+    this.root.append(this.plOverlay)
 
     // URL 对话框
     this.urlDialog = this._buildUrlDialog()
@@ -178,6 +182,7 @@ export class PlayerUI {
       this.btnLoop = this._ctrlBtn('loop', 'repeat', '循环播放', 'loop', false),
       this.btnFs = this._ctrlBtn('fullscreen', 'fullscreen', '全屏', 'fullscreen', false),
     ])
+    this.btnLoop.classList.add('hide-narrow')
 
     this.controlBar.append(progress, row)
   }
@@ -276,8 +281,20 @@ export class PlayerUI {
     // 键盘快捷键
     window.addEventListener('keydown', (e) => this._shortcut(e))
 
-    // 鼠标移动显示 UI
-    this.playerEl.addEventListener('pointermove', () => this._pokeUI())
+    // 鼠标移动仅显示 UI，不重置隐藏计时器
+    this.playerEl.addEventListener('pointermove', () => {
+      this.playerEl.classList.add('ui-visible')
+      // 不设置隐藏计时器，由点击或键盘触发
+    })
+
+    // 点击播放器切换 UI 显示/隐藏
+    this.playerEl.addEventListener('click', (e) => {
+      // 忽略控制栏、播放列表、菜单上的点击
+      if (e.target.closest('.control-bar') || e.target.closest('.playlist-panel') ||
+          e.target.closest('.menu') || e.target.closest('.icon-btn') ||
+          e.target.closest('.pl-item') || e.target.closest('.pl-overlay')) return
+      this._toggleUI()
+    })
 
     // 空状态点击
     this.emptyState.addEventListener('click', (e) => {
@@ -305,6 +322,14 @@ export class PlayerUI {
       if (this.transcodeAbort) { this.transcodeAbort.abort(); toast('已取消转码') }
     })
 
+    // 移动端抽屉遮罩点击关闭
+    this.plOverlay.addEventListener('click', () => {
+      if (this.plPanel.classList.contains('open')) {
+        this.plPanel.classList.remove('open')
+        this._updatePlOverlay()
+      }
+    })
+
     // 全局错误捕获：任何未捕获异常都提示，避免「闪退为空」后页面静默空白
     window.addEventListener('error', (e) => {
       if (e && e.message && e.message !== 'Script error.') toast(`页面错误：${e.message}`, 'error')
@@ -313,6 +338,13 @@ export class PlayerUI {
       const msg = e && e.reason ? (e.reason.message || String(e.reason)) : '未知错误'
       if (msg && msg !== 'aborted') toast(`运行错误：${msg}`, 'error')
     })
+
+    // 布局切换时自动同步播放列表开关
+    const mqlMobile = window.matchMedia('(max-width: 820px)')
+    const mqlLandscape = window.matchMedia('(max-height: 500px) and (orientation: landscape)')
+    const sync = () => this._syncPlaylistLayout()
+    mqlMobile.addEventListener('change', sync)
+    mqlLandscape.addEventListener('change', sync)
   }
 
   _bindProgress() {
@@ -638,7 +670,25 @@ export class PlayerUI {
 
   togglePlaylist() {
     this.plPanel.classList.toggle('open')
+    this._updatePlOverlay()
     if (this.plPanel.classList.contains('open')) this.renderPlaylist()
+  }
+
+  /**
+   * 移动端（≤820px 或横屏矮窗）默认折叠播放列表，窗口撑开后自动展开
+   */
+  _syncPlaylistLayout() {
+    const mobile = window.matchMedia('(max-width: 820px)').matches ||
+      (window.matchMedia('(max-height: 500px)').matches && window.matchMedia('(orientation: landscape)').matches)
+    this.plPanel.classList.toggle('open', !mobile)
+    this._updatePlOverlay()
+    if (!mobile) this.renderPlaylist()
+  }
+
+  _updatePlOverlay() {
+    const mobile = window.matchMedia('(max-width: 820px)').matches ||
+      (window.matchMedia('(max-height: 500px)').matches && window.matchMedia('(orientation: landscape)').matches)
+    this.plOverlay.classList.toggle('show', this.plPanel.classList.contains('open') && mobile)
   }
 
   /* ================= 播放列表渲染 ================= */
@@ -798,9 +848,26 @@ export class PlayerUI {
   _pokeUI() {
     this.playerEl.classList.add('ui-visible')
     clearTimeout(this.uiTimer)
-    this.uiTimer = setTimeout(() => {
-      if (!this.player.paused) this.playerEl.classList.remove('ui-visible')
-    }, 2600)
+    if (!this.player.paused) {
+      this.uiTimer = setTimeout(() => {
+        this.playerEl.classList.remove('ui-visible')
+      }, 3000)
+    }
+  }
+
+  _toggleUI() {
+    if (this.playerEl.classList.contains('ui-visible')) {
+      this.playerEl.classList.remove('ui-visible')
+      clearTimeout(this.uiTimer)
+    } else {
+      this.playerEl.classList.add('ui-visible')
+      clearTimeout(this.uiTimer)
+      if (!this.player.paused) {
+        this.uiTimer = setTimeout(() => {
+          this.playerEl.classList.remove('ui-visible')
+        }, 3000)
+      }
+    }
   }
 
   /* ================= 快捷键 ================= */
