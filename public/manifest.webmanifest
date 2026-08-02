@@ -1,0 +1,35 @@
+{
+  "name": "Universal Player · 全能视频播放器",
+  "short_name": "Player",
+  "description": "跨端视频播放器：支持 MP4、WebM、MKV、HLS、DASH、FLV 及任意格式（ffmpeg.wasm 转码兜底）。可安装到桌面与移动端。",
+  "id": "universal-video-player",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0b0b10",
+  "theme_color": "#0b0b10",
+  "orientation": "any",
+  "lang": "zh-CN",
+  "categories": ["entertainment", "video", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

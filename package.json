@@ -1,0 +1,24 @@
+{
+  "name": "universal-video-player",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "跨端视频播放器：Web / 桌面 / 移动端，支持 HLS、DASH、FLV、MP4、WebM 及任意格式（ffmpeg.wasm 转码兜底）",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/gen-icons.mjs && vite build",
+    "preview": "vite preview",
+    "gen-icons": "node scripts/gen-icons.mjs"
+  },
+  "dependencies": {
+    "@ffmpeg/core": "0.11.0",
+    "@ffmpeg/ffmpeg": "0.11.6",
+    "dashjs": "^4.7.4",
+    "hls.js": "^1.5.17",
+    "mpegts.js": "^1.7.3"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1",
+    "vite": "^5.4.10"
+  }
+}
