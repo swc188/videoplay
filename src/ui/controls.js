@@ -1,9 +1,10 @@
 import { Player } from '../player/Player.js'
 import { transcodeFile } from '../player/transcoder.js'
 import { detectKind } from '../player/sources.js'
+import { loadDirHandle, saveDirHandle, scanDirectory } from '../player/localVideos.js'
 import { SubtitleManager } from './subtitles.js'
 import { Playlist } from './playlist.js'
-import { el, icon, toast, fmtTime, baseName, extname } from '../utils.js'
+import { el, icon, toast, fmtTime, baseName, extname, isMediaFile } from '../utils.js'
 
 const LS_PREFS = 'uvp:prefs'
 const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3]
@@ -39,6 +40,10 @@ export class PlayerUI {
     this.subtitle = new SubtitleManager(this.subLayer, this.video)
     this._bind()
     this._applyPrefs()
+    // 默认不显示首屏，直接展示播放列表
+    this.emptyState.classList.add('hidden')
+    this.plPanel.classList.add('open')
+    this._initLocalLibrary()
   }
 
   /* ================= DOM 构建 ================= */
@@ -114,7 +119,10 @@ export class PlayerUI {
     this.plPanel = el('aside', { class: 'playlist-panel' }, [
       el('div', { class: 'playlist-header' }, [
         el('h3', null, [icon('list', 17), '播放列表']),
-        this.plClearBtn = el('button', { class: 'playlist-clear' }, '清空'),
+        el('div', { class: 'playlist-actions' }, [
+          this.plFolderBtn = el('button', { class: 'playlist-clear', type: 'button', title: '选择本地视频文件夹，自动加载全部视频' }, [icon('folder', 15), ' 文件夹']),
+          this.plClearBtn = el('button', { class: 'playlist-clear', type: 'button' }, '清空'),
+        ]),
       ]),
       this.plList = el('div', { class: 'playlist-list' }),
     ])
@@ -285,6 +293,7 @@ export class PlayerUI {
       this.playlist.clear()
       this.renderPlaylist()
     })
+    this.plFolderBtn.addEventListener('click', () => this._selectFolder())
 
     // 转码面板（点击隐藏）
     this.tp.addEventListener('click', () => {
@@ -431,11 +440,50 @@ export class PlayerUI {
   }
 
   async loadFiles(fileList) {
-    const files = [...fileList].filter((f) =>
-      f.type.startsWith('video/') || f.type.startsWith('audio/') || /\.(mkv|avi|mov|wmv|rmvb|rm|flv|ts|m3u8|mpd|mp4|webm|ogv|mp3|m4a|3gp|vob|asf|mpeg|mpg|m4v)$/i.test(f.name))
+    const files = [...fileList].filter(isMediaFile)
     if (!files.length) { toast('未找到可播放的媒体文件', 'error'); return }
     const entries = files.map((f) => this.playlist.addFile(f))
     await this.playItem(entries[0].id)
+  }
+
+  /* ================= 本地视频库（打开程序自动加载） ================= */
+  async _initLocalLibrary() {
+    if (!window.showDirectoryPicker) return
+    const handle = await loadDirHandle()
+    if (!handle) { this.renderPlaylist(); return }
+    let perm = 'prompt'
+    try { perm = await handle.queryPermission({ mode: 'read' }) } catch {}
+    if (perm === 'granted') await this._loadFromHandle(handle)
+  }
+
+  async _selectFolder() {
+    if (!window.showDirectoryPicker) { toast('当前浏览器不支持自动加载本地视频', 'error'); return }
+    let handle
+    try {
+      handle = await window.showDirectoryPicker({ mode: 'read' })
+    } catch (e) {
+      if (e && e.name === 'AbortError') return
+      toast(`无法访问目录：${e?.message || e?.name || '未知错误'}`, 'error')
+      return
+    }
+    await saveDirHandle(handle)
+    await this._loadFromHandle(handle)
+  }
+
+  async _loadFromHandle(handle) {
+    toast('正在扫描本地视频…')
+    let files
+    try {
+      files = await scanDirectory(handle)
+    } catch (e) {
+      toast(`扫描失败：${e?.message || e?.name || '未知错误'}`, 'error')
+      return
+    }
+    if (!files.length) { toast('该目录下没有找到支持播放的视频文件', 'error'); return }
+    files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+    files.forEach((f) => this.playlist.addFile(f))
+    this.renderPlaylist()
+    toast(`已加载 ${files.length} 个本地视频，点击列表播放`, 'success')
   }
 
   async playLast() {
@@ -576,7 +624,9 @@ export class PlayerUI {
     if (!items.length) {
       this.plList.append(el('div', { class: 'pl-empty' }, [
         '列表为空。', el('br'),
-        '点击右上角「打开文件」或「网络视频」添加内容。',
+        window.showDirectoryPicker
+          ? '点击上方「文件夹」选择本地视频目录，程序会自动加载全部视频。'
+          : '点击右上角「打开文件」或「网络视频」添加内容。',
       ]))
       return
     }

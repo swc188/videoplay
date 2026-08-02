@@ -451,11 +451,17 @@ input[type="range"]::-moz-range-thumb {
 }
 .playlist-header h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
 .playlist-header h3 svg { width: 17px; height: 17px; color: var(--accent); }
+.playlist-actions { display: flex; align-items: center; gap: 4px; }
+.playlist-actions .playlist-clear svg { width: 14px; height: 14px; }
 .playlist-clear {
   font-size: 11.5px;
   color: var(--text-dim);
   padding: 5px 9px;
   border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
 }
 .playlist-clear:hover { background: rgba(255,255,255,0.08); color: #fff; }
 
