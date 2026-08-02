@@ -1,4 +1,4 @@
-import { isMediaFile } from '../utils.js'
+import { isSupportedLocalFile } from './sources.js'
 
 const DB_NAME = 'uvp:library'
 const DB_VERSION = 1
@@ -66,7 +66,7 @@ export async function scanDirectory(dirHandle, out = []) {
       await scanDirectory(entry, out)
     } else if (entry.kind === 'file') {
       const f = await entry.getFile()
-      if (isMediaFile(f)) out.push(f)
+      if (isSupportedLocalFile(f)) out.push(f)
     }
   }
   return out

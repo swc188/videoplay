@@ -10,6 +10,18 @@ let ffmpeg = null
 let loadingPromise = null
 let lastDuration = 0
 
+// 转码需要把整个文件读入内存并在 wasm 内存中复制一份，
+// 超大文件会导致浏览器标签页内存耗尽而崩溃白屏，这里设置安全上限
+export const MAX_TRANSCODE_SIZE = 400 * 1024 * 1024
+
+// 转码结果缓存：同一文件（按 文件名|大小 区分）只转码一次，重复点击秒播
+const transcodeCache = new Map()
+const TRANSCODE_CACHE_MAX = 12
+
+function transcodeKey(file) {
+  return `${file.name}|${file.size}`
+}
+
 function toAbs(url) {
   return new URL(url, import.meta.url).href
 }
@@ -48,6 +60,12 @@ function parseTimeToSeconds(str) {
  * @returns {Promise<Blob>}
  */
 export async function transcodeFile(file, { onProgress, signal } = {}) {
+  if (file.size > MAX_TRANSCODE_SIZE) {
+    throw new Error(`文件过大（${(file.size / 1048576).toFixed(0)}MB），超过 ${MAX_TRANSCODE_SIZE / 1048576}MB 上限，浏览器内存不足，无法转码`)
+  }
+  const key = transcodeKey(file)
+  if (transcodeCache.has(key)) return transcodeCache.get(key)
+
   const ff = await loadFFmpeg()
   if (signal && signal.aborted) throw new Error('aborted')
 
@@ -88,7 +106,12 @@ export async function transcodeFile(file, { onProgress, signal } = {}) {
     await ff.run(...args)
     const data = ff.FS('readFile', outName)
     const view = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-    return new Blob([view], { type: 'video/mp4' })
+    const blob = new Blob([view], { type: 'video/mp4' })
+    if (transcodeCache.size >= TRANSCODE_CACHE_MAX) {
+      transcodeCache.delete(transcodeCache.keys().next().value)
+    }
+    transcodeCache.set(key, blob)
+    return blob
   } finally {
     try { ff.FS('unlink', inName) } catch {}
     try { ff.FS('unlink', outName) } catch {}

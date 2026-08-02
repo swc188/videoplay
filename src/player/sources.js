@@ -32,6 +32,27 @@ export function isNativeMime(mime = '') {
 }
 
 /**
+ * 扩展名是否在播放器可处理范围内（原生 / HLS / DASH / FLV / TS / 转码）
+ */
+export function isSupportedExtName(name = '') {
+  const e = extname(name)
+  if (!e) return false
+  return NATIVE_EXTS.has(e) || HLS_EXTS.has(e) || DASH_EXTS.has(e) ||
+    FLV_EXTS.has(e) || TS_EXTS.has(e) || TRANSCODE_EXTS.has(e)
+}
+
+/**
+ * 本地文件是否可被播放器处理（点击即可播放）。
+ * 包含全部支持格式，但排除仅限网络流的 m3u8 / mpd。
+ */
+export function isSupportedLocalFile(file) {
+  if (!file) return false
+  const e = extname(file.name)
+  if (HLS_EXTS.has(e) || DASH_EXTS.has(e)) return false
+  return file.type.startsWith('video/') || file.type.startsWith('audio/') || isSupportedExtName(file.name)
+}
+
+/**
  * 判定资源类型
  * @returns {{kind:'native'|'hls'|'dash'|'flv'|'ts'|'transcode'|'unknown', ext:string}}
  */

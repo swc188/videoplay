@@ -1,10 +1,10 @@
 import { Player } from '../player/Player.js'
 import { transcodeFile } from '../player/transcoder.js'
-import { detectKind } from '../player/sources.js'
+import { detectKind, isSupportedLocalFile } from '../player/sources.js'
 import { loadDirHandle, saveDirHandle, scanDirectory } from '../player/localVideos.js'
 import { SubtitleManager } from './subtitles.js'
 import { Playlist } from './playlist.js'
-import { el, icon, toast, fmtTime, baseName, extname, isMediaFile } from '../utils.js'
+import { el, icon, toast, fmtTime, baseName, extname } from '../utils.js'
 
 const LS_PREFS = 'uvp:prefs'
 const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3]
@@ -131,8 +131,9 @@ export class PlayerUI {
 
     // 文件选择器
     this.fileInput = el('input', { type: 'file', accept: FILE_PICKER_ACCEPT, multiple: '', style: 'display:none' })
+    this.folderInput = el('input', { type: 'file', webkitdirectory: '', multiple: '', style: 'display:none' })
     this.subInput = el('input', { type: 'file', accept: '.srt,.vtt', style: 'display:none' })
-    this.root.append(this.fileInput, this.subInput)
+    this.root.append(this.fileInput, this.folderInput, this.subInput)
 
     // URL 对话框
     this.urlDialog = this._buildUrlDialog()
@@ -258,6 +259,10 @@ export class PlayerUI {
       if (this.subInput.files.length) this.loadSubtitleFile(this.subInput.files[0])
       this.subInput.value = ''
     })
+    this.folderInput.addEventListener('change', () => {
+      if (this.folderInput.files.length) this._addLocalFiles(this.folderInput.files)
+      this.folderInput.value = ''
+    })
 
     // 拖拽到整个窗口
     ;['dragenter', 'dragover'].forEach((ev) =>
@@ -298,6 +303,15 @@ export class PlayerUI {
     // 转码面板（点击隐藏）
     this.tp.addEventListener('click', () => {
       if (this.transcodeAbort) { this.transcodeAbort.abort(); toast('已取消转码') }
+    })
+
+    // 全局错误捕获：任何未捕获异常都提示，避免「闪退为空」后页面静默空白
+    window.addEventListener('error', (e) => {
+      if (e && e.message && e.message !== 'Script error.') toast(`页面错误：${e.message}`, 'error')
+    })
+    window.addEventListener('unhandledrejection', (e) => {
+      const msg = e && e.reason ? (e.reason.message || String(e.reason)) : '未知错误'
+      if (msg && msg !== 'aborted') toast(`运行错误：${msg}`, 'error')
     })
   }
 
@@ -440,7 +454,7 @@ export class PlayerUI {
   }
 
   async loadFiles(fileList) {
-    const files = [...fileList].filter(isMediaFile)
+    const files = [...fileList].filter(isSupportedLocalFile)
     if (!files.length) { toast('未找到可播放的媒体文件', 'error'); return }
     const entries = files.map((f) => this.playlist.addFile(f))
     await this.playItem(entries[0].id)
@@ -457,17 +471,29 @@ export class PlayerUI {
   }
 
   async _selectFolder() {
-    if (!window.showDirectoryPicker) { toast('当前浏览器不支持自动加载本地视频', 'error'); return }
+    if (!window.showDirectoryPicker) { this.folderInput.click(); return }
     let handle
     try {
       handle = await window.showDirectoryPicker({ mode: 'read' })
     } catch (e) {
       if (e && e.name === 'AbortError') return
-      toast(`无法访问目录：${e?.message || e?.name || '未知错误'}`, 'error')
+      this.folderInput.click()
       return
     }
     await saveDirHandle(handle)
     await this._loadFromHandle(handle)
+  }
+
+  /**
+   * 过滤、排序并加入播放列表展示（不自动播放，等待用户点击）
+   */
+  _addLocalFiles(files) {
+    const list = [...files].filter(isSupportedLocalFile)
+    if (!list.length) { toast('该文件夹下没有找到支持播放的视频文件', 'error'); return }
+    list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+    list.forEach((f) => this.playlist.addFile(f))
+    this.renderPlaylist()
+    toast(`已加载 ${list.length} 个本地视频，点击列表播放`, 'success')
   }
 
   async _loadFromHandle(handle) {
@@ -480,10 +506,7 @@ export class PlayerUI {
       return
     }
     if (!files.length) { toast('该目录下没有找到支持播放的视频文件', 'error'); return }
-    files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
-    files.forEach((f) => this.playlist.addFile(f))
-    this.renderPlaylist()
-    toast(`已加载 ${files.length} 个本地视频，点击列表播放`, 'success')
+    this._addLocalFiles(files)
   }
 
   async playLast() {
@@ -555,6 +578,7 @@ export class PlayerUI {
       this.tp.classList.remove('show')
       if (ctrl.signal.aborted) return
       toast(`转码失败：${e.message || '未知错误'}`, 'error')
+      this._restoreEmpty()
     })
   }
 
@@ -624,9 +648,7 @@ export class PlayerUI {
     if (!items.length) {
       this.plList.append(el('div', { class: 'pl-empty' }, [
         '列表为空。', el('br'),
-        window.showDirectoryPicker
-          ? '点击上方「文件夹」选择本地视频目录，程序会自动加载全部视频。'
-          : '点击右上角「打开文件」或「网络视频」添加内容。',
+        '点击上方「文件夹」选择本地视频目录，自动加载全部视频。',
       ]))
       return
     }
@@ -823,12 +845,20 @@ export class PlayerUI {
   }
 
   /* ================= 错误处理 ================= */
+  _restoreEmpty() {
+    const v = this.video
+    const idle = !v.currentSrc && !v.error && !this.transcodeAbort
+    if (idle) this.emptyState.classList.remove('hidden')
+  }
+
   _handleError(err) {
     const msg = err?.message || '加载失败'
     toast(msg, 'error')
     if (this.currentItem && this.currentItem.source.type === 'file' && !this.transcodeAbort) {
       toast('尝试使用 ffmpeg.wasm 转码播放…')
       setTimeout(() => this.startTranscode(this.currentItem.source.file), 800)
+    } else {
+      this._restoreEmpty()
     }
   }
 

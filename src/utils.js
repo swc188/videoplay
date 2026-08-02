@@ -102,11 +102,6 @@ export const extname = (name = '') => {
   return m ? m[1].toLowerCase() : ''
 }
 
-const MEDIA_EXT = /\.(mkv|avi|mov|wmv|rmvb|rm|flv|ts|m3u8|mpd|mp4|webm|ogv|mp3|m4a|m4v|3gp|vob|asf|mpeg|mpg|aac|flac|wav|ogg)$/i
-
-export const isMediaFile = (file) =>
-  !!(file && (file.type.startsWith('video/') || file.type.startsWith('audio/') || MEDIA_EXT.test(file.name || '')))
-
 export const baseName = (url = '') => {
   try {
     const u = new URL(url)
