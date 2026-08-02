@@ -490,6 +490,8 @@ export class PlayerUI {
     if (!files.length) { toast('未找到可播放的媒体文件', 'error'); return }
     const entries = files.map((f) => this.playlist.addFile(f))
     await this.playItem(entries[0].id)
+    // 移动端选择文件后自动展开播放列表
+    if (!this.plPanel.classList.contains('open')) this.togglePlaylist()
   }
 
   /* ================= 本地视频库（打开程序自动加载） ================= */

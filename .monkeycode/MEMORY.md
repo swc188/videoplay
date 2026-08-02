@@ -42,3 +42,4 @@ Entries discovered by the Agent while performing [specific task description] sho
   - Spinner/loading elements with z-index can intercept clicks; add pointer-events: none to fix
   - Test on multiple devices (iPad Mini 768x1024, iPhone 12, Pixel 5) to verify touch interaction works correctly
   - Playwright mouse.click() coordinates should match actual element center position, not viewport center
+  - File objects from certain sources (Web API, programmatic creation) may have undefined `type` property; always use `(file.type || '')` as default when calling String methods on file.type
