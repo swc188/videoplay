@@ -452,6 +452,7 @@ input[type="range"]::-moz-range-thumb {
   pointer-events: none;
   transition: width 0.28s ease, opacity 0.28s ease;
   min-height: 0;
+  max-height: 100%;
   z-index: 35;
 }
 .playlist-panel.open { width: 320px; opacity: 1; pointer-events: auto; }

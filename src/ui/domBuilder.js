@@ -87,7 +87,7 @@ export const domBuilderMethods = {
           this.plClearBtn = el('button', { class: 'playlist-clear', type: 'button' }, '清空'),
         ]),
       ]),
-      this.plList = el('div', { class: 'playlist-list' }),
+      this.plList = el('div', { class: 'playlist-list', tabindex: '-1' }),
     ])
 
     main.append(this.playerEl, this.plPanel)

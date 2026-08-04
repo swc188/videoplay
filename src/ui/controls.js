@@ -304,6 +304,7 @@ export class PlayerUI {
       row.addEventListener('click', (e) => {
         if (e.target.closest('.pl-del')) { this.playlist.remove(item.id); return }
         if (item.id !== this.currentItem?.id) this.playItem(item.id)
+        this.plList.focus({ preventScroll: true })
       })
       this.plList.append(row)
     })

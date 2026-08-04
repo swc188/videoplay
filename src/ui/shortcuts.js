@@ -6,6 +6,10 @@ export const shortcutMethods = {
     const t = e.target
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
     const k = e.key.toLowerCase()
+    // 焦点在播放列表中时，让方向键用于列表滚动/选中，而非音量/快进
+    if (t && (t.closest('.playlist-list') || t === this.plList)) {
+      if (k === 'arrowup' || k === 'arrowdown' || k === 'arrowleft' || k === 'arrowright') return
+    }
     const v = this.player
 
     switch (k) {
