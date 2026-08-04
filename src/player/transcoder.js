@@ -59,15 +59,17 @@ function parseTimeToSeconds(str) {
  * @param {Object} opts { onProgress(pct), signal }
  * @returns {Promise<Blob>}
  */
-export async function transcodeFile(file, { onProgress, signal } = {}) {
+export async function transcodeFile(file, { onProgress, onEngineLoad, signal } = {}) {
   if (file.size > MAX_TRANSCODE_SIZE) {
     throw new Error(`文件过大（${(file.size / 1048576).toFixed(0)}MB），超过 ${MAX_TRANSCODE_SIZE / 1048576}MB 上限，浏览器内存不足，无法转码`)
   }
   const key = transcodeKey(file)
   if (transcodeCache.has(key)) return transcodeCache.get(key)
 
+  const engineWasReady = isTranscoderReady()
   const ff = await loadFFmpeg()
   if (signal && signal.aborted) throw new Error('aborted')
+  if (!engineWasReady) onEngineLoad?.()
 
   const inName = `in${extname(file.name) ? '.' + extname(file.name) : ''}`
   const outName = 'out.mp4'
@@ -120,6 +122,16 @@ export async function transcodeFile(file, { onProgress, signal } = {}) {
 
 export function isTranscoderReady() {
   return !!ffmpeg
+}
+
+/**
+ * 空闲预加载 ffmpeg.wasm，避免首次转码时现场下载 24MB core 造成长时间无反馈等待
+ */
+export function preloadTranscoder() {
+  if (ffmpeg || loadingPromise) return loadingPromise || Promise.resolve()
+  const p = loadFFmpeg()
+  p.catch(() => {})
+  return p
 }
 
 /**
