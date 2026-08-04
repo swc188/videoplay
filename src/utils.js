@@ -71,6 +71,8 @@ const ICON_PATHS = {
   save: '<path d="M5 3h11l3 3v15H5V3zm6 6v8m0-8l-3 3m3-3l3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
   cc: '<path d="M3 6h18v12H3z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5c-.6-.6-1.8-.6-2.4 0-.8.8-.8 2.2 0 3 .6.6 1.8.6 2.4 0M14.5 10.5c-.6-.6-1.8-.6-2.4 0-.8.8-.8 2.2 0 3 .6.6 1.8.6 2.4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
   info: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8h.01M12 11v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  prev: '<polygon points="5,4 15,12 5,20" fill="currentColor"/><rect x="3" y="4" width="2" height="16" rx="1" fill="currentColor"/>',
+  next: '<polygon points="19,4 9,12 19,20" fill="currentColor"/><rect x="19" y="4" width="2" height="16" rx="1" fill="currentColor"/>',
 }
 
 export const icon = (name, size = 20) => {

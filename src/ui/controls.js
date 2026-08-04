@@ -209,6 +209,20 @@ export class PlayerUI {
   _act(action) {
     switch (action) {
       case 'play': this.player.toggle(); this._pokeUI(); break
+      case 'prev':
+        if (!this.playlist.items.length) break
+        const idx = this.playlist.items.findIndex(i => i.id === this.currentItem?.id)
+        if (idx > 0) this.playItem(this.playlist.items[idx - 1].id)
+        else this.playItem(this.playlist.items[this.playlist.items.length - 1].id)
+        this._pokeUI()
+        break
+      case 'next':
+        if (!this.playlist.items.length) break
+        const ni = this.playlist.items.findIndex(i => i.id === this.currentItem?.id)
+        if (ni >= 0 && ni < this.playlist.items.length - 1) this.playItem(this.playlist.items[ni + 1].id)
+        else if (this.playlist.items.length > 0) this.playItem(this.playlist.items[0].id)
+        this._pokeUI()
+        break
       case 'rewind': this.player.seekBy(-10); this._pokeUI(); break
       case 'forward': this.player.seekBy(10); this._pokeUI(); break
       case 'mute': this.player.setVolume(this.player.volume, !this.player.muted); break

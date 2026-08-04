@@ -15,10 +15,28 @@ export const shortcutMethods = {
     switch (k) {
       case ' ':
       case 'k': e.preventDefault(); v.toggle(); this._pokeUI(); break
-      case 'arrowleft': e.preventDefault(); v.seekBy(e.shiftKey ? -30 : -5); this._pokeUI(); break
-      case 'arrowright': e.preventDefault(); v.seekBy(e.shiftKey ? 30 : 5); this._pokeUI(); break
+      case 'arrowleft':
+        if (e.target.closest?.('.playlist-list') || document.activeElement?.closest?.('.playlist-list')) { e.preventDefault(); return }
+        e.preventDefault(); v.seekBy(e.shiftKey ? -30 : -5); this._pokeUI(); break
+      case 'arrowright':
+        if (e.target.closest?.('.playlist-list') || document.activeElement?.closest?.('.playlist-list')) { e.preventDefault(); return }
+        e.preventDefault(); v.seekBy(e.shiftKey ? 30 : 5); this._pokeUI(); break
       case 'arrowup': e.preventDefault(); this._nudgeVolume(0.05); break
       case 'arrowdown': e.preventDefault(); this._nudgeVolume(-0.05); break
+      case 'p':
+        if (!this.playlist.items.length) break
+        const idx2 = this.playlist.items.findIndex(i => i.id === this.currentItem?.id)
+        if (idx2 > 0) this.playItem(this.playlist.items[idx2 - 1].id)
+        else this.playItem(this.playlist.items[this.playlist.items.length - 1].id)
+        this._pokeUI()
+        break
+      case 'n':
+        if (!this.playlist.items.length) break
+        const ni2 = this.playlist.items.findIndex(i => i.id === this.currentItem?.id)
+        if (ni2 >= 0 && ni2 < this.playlist.items.length - 1) this.playItem(this.playlist.items[ni2 + 1].id)
+        else if (this.playlist.items.length > 0) this.playItem(this.playlist.items[0].id)
+        this._pokeUI()
+        break
       case 'j': v.seekBy(-10); this._pokeUI(); break
       case 'l': v.seekBy(10); this._pokeUI(); break
       case 'm': v.setVolume(v.volume, !v.muted); break

@@ -127,7 +127,9 @@ export const domBuilderMethods = {
     this.timeDur = el('span', { class: 'dur' }, '0:00')
 
     const row = el('div', { class: 'controls-row' }, [
+      this._ctrlBtn('prev', 'prev', '上一个', 'prev', true),
       this.btnPlay,
+      this._ctrlBtn('next', 'next', '下一个', 'next', true),
       this._ctrlBtn('rewind', 'rewind', '后退 10 秒', 'rewind', false),
       this._ctrlBtn('forward', 'forward', '前进 10 秒', 'forward', false),
       el('div', { class: 'time-display' }, [this.timeCur, el('span', { class: 'sep' }, '/'), this.timeDur]),
