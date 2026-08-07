@@ -216,6 +216,8 @@ svg { display: block; }
   flex-direction: column;
   gap: 4px;
   transition: opacity 0.25s ease, transform 0.25s ease;
+  background: rgba(0,0,0,0.35);
+  border-radius: 12px 12px 0 0;
 }
 .player.ui-hidden .control-bar { opacity: 0; pointer-events: none; transform: translateY(10px); }
 
