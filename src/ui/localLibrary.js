@@ -2,6 +2,19 @@ import { isSupportedLocalFile } from '../player/sources.js'
 import { loadDirHandle, saveDirHandle, scanDirectory } from '../player/localVideos.js'
 import { toast } from '../utils.js'
 
+/**
+ * 检测浏览器是否支持目录选择（showDirectoryPicker 或 webkitdirectory）
+ * QQ浏览器/百度浏览器等国产浏览器通常不支持
+ */
+function supportsDirectoryPicker() {
+  if (typeof window.showDirectoryPicker === 'function') return true
+  // 检测 webkitdirectory 支持（Chrome/Edge 桌面 + Chrome Android 108+）
+  const testInput = document.createElement('input')
+  testInput.type = 'file'
+  testInput.setAttribute('webkitdirectory', '')
+  return !!testInput.webkitdirectory
+}
+
 export const localLibraryMethods = {
   /* 打开程序自动加载本地视频库 */
   async _initLocalLibrary() {
@@ -14,6 +27,10 @@ export const localLibraryMethods = {
   },
 
   async _selectFolder() {
+    if (!supportsDirectoryPicker()) {
+      this._showFolderNotSupportedToast()
+      return
+    }
     if (!window.showDirectoryPicker) { this.folderInput.click(); return }
     let handle
     try {
@@ -25,6 +42,13 @@ export const localLibraryMethods = {
     }
     await saveDirHandle(handle)
     await this._loadFromHandle(handle)
+  },
+
+  /**
+   * 提示浏览器不支持文件夹选择，并提供替代方案
+   */
+  _showFolderNotSupportedToast() {
+    toast('当前浏览器不支持文件夹选择，请改用 Chrome 或 Edge，或点击"打开文件"选择多个视频', 'error')
   },
 
   /**
@@ -50,11 +74,9 @@ export const localLibraryMethods = {
       return
     }
     if (!files.length) {
-      // 有扫描条目但无视频 → 可能是格式不支持
       if (stats.scanned > 0) {
         toast('该文件夹下没有找到支持播放的视频文件', 'error')
       } else {
-        // 完全没有扫描到文件 → 可能是权限问题，静默处理避免误导
         toast('未找到可播放的媒体文件', 'error')
       }
       return
