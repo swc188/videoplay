@@ -143,7 +143,10 @@ svg { display: block; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px; height: 36px;
+  gap: 6px;
+  padding: 0 10px;
+  height: 36px;
+  min-width: auto;
   border-radius: 9px;
   color: #fff;
   background: rgba(20,20,28,0.5);
@@ -151,11 +154,12 @@ svg { display: block; }
   -webkit-backdrop-filter: blur(6px);
   border: 1px solid rgba(255,255,255,0.08);
   transition: background 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
 }
 .icon-btn:hover { background: rgba(255,255,255,0.14); }
 .icon-btn:active { transform: scale(0.92); }
-.icon-btn svg { width: 19px; height: 19px; }
-.icon-btn .label-text { font-size: 12px; font-weight: 600; padding: 0 6px; }
+.icon-btn svg { width: 19px; height: 19px; flex: none; }
+.icon-btn .label-text { font-size: 12px; font-weight: 600; padding: 0; }
 
 /* ============ Center zone ============ */
 .center-zone {
