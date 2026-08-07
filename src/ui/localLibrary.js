@@ -3,10 +3,21 @@ import { loadDirHandle, saveDirHandle, scanDirectory } from '../player/localVide
 import { toast } from '../utils.js'
 
 /**
+ * 检测浏览器是否为 QQ浏览器 / 百度浏览器等国产浏览器。
+ * 它们基于 Chromium 内核但未实现目录选择 API（showDirectoryPicker / webkitdirectory 实际无效）。
+ */
+function isLegacyChinaBrowser() {
+  const ua = (navigator.userAgent || '').toLowerCase()
+  return ua.includes('qqbrowser') || ua.includes('mqqbrowser') ||
+    ua.includes('baidu') || ua.includes('baiduboxapp') || ua.includes('bidubrowser')
+}
+
+/**
  * 检测浏览器是否支持目录选择（showDirectoryPicker 或 webkitdirectory）
  * QQ浏览器/百度浏览器等国产浏览器通常不支持
  */
 function supportsDirectoryPicker() {
+  if (isLegacyChinaBrowser()) return false
   if (typeof window.showDirectoryPicker === 'function') return true
   // 检测 webkitdirectory 支持（Chrome/Edge 桌面 + Chrome Android 108+）
   const testInput = document.createElement('input')
