@@ -89,10 +89,15 @@ export class PlayerUI {
     // 键盘快捷键
     window.addEventListener('keydown', (e) => this._shortcut(e))
 
-    // 鼠标移动仅显示 UI，不重置隐藏计时器
+    // 鼠标移动显示 UI 并重置隐藏计时器
     this.playerEl.addEventListener('pointermove', () => {
       this.playerEl.classList.add('ui-visible')
-      // 不设置隐藏计时器，由点击或键盘触发
+      clearTimeout(this.uiTimer)
+      if (!this.player.paused) {
+        this.uiTimer = setTimeout(() => {
+          this.playerEl.classList.remove('ui-visible')
+        }, 3000)
+      }
     })
 
     // 点击播放器切换 UI 显示/隐藏

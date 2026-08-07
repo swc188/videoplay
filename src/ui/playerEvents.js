@@ -19,6 +19,13 @@ export const playerEventsMethods = {
         this.btnPlay.append(icon('pause', 20))
         this.bigPlay.innerHTML = ''
         this.bigPlay.append(icon('pause', 30))
+        // 播放开始后 3 秒自动隐藏 UI
+        clearTimeout(this.uiTimer)
+        this.uiTimer = setTimeout(() => {
+          if (!this.player.paused) {
+            this.playerEl.classList.remove('ui-visible')
+          }
+        }, 3000)
       },
       onPause: () => {
         this.playerEl.classList.remove('playing')
@@ -27,6 +34,9 @@ export const playerEventsMethods = {
         this.btnPlay.append(icon('play', 20))
         this.bigPlay.innerHTML = ''
         this.bigPlay.append(icon('play', 30))
+        // 暂停时显示 UI
+        clearTimeout(this.uiTimer)
+        this.playerEl.classList.add('ui-visible')
       },
       onPlaying: () => {
         this.spinner.classList.remove('show')
