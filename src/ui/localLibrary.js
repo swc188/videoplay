@@ -41,14 +41,24 @@ export const localLibraryMethods = {
 
   async _loadFromHandle(handle) {
     toast('正在扫描本地视频…')
+    const stats = { scanned: 0, skipped: 0, errors: 0 }
     let files
     try {
-      files = await scanDirectory(handle)
+      files = await scanDirectory(handle, [], stats)
     } catch (e) {
       toast(`扫描失败：${e?.message || e?.name || '未知错误'}`, 'error')
       return
     }
-    if (!files.length) { toast('该目录下没有找到支持播放的视频文件', 'error'); return }
+    if (!files.length) {
+      // 有扫描条目但无视频 → 可能是格式不支持
+      if (stats.scanned > 0) {
+        toast('该文件夹下没有找到支持播放的视频文件', 'error')
+      } else {
+        // 完全没有扫描到文件 → 可能是权限问题，静默处理避免误导
+        toast('未找到可播放的媒体文件', 'error')
+      }
+      return
+    }
     this._addLocalFiles(files)
   },
 }

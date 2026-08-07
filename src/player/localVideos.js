@@ -58,16 +58,35 @@ export async function saveDirHandle(handle) {
 }
 
 /**
- * 递归扫描目录（含所有子目录），收集播放器支持的全部媒体文件
+ * 递归扫描目录（含所有子目录），收集播放器支持的全部媒体文件。
+ * 跳过 Android 系统目录（Android/data 等无权限），单条目失败不中断扫描。
  */
-export async function scanDirectory(dirHandle, out = []) {
-  for await (const entry of dirHandle.values()) {
-    if (entry.kind === 'directory') {
-      await scanDirectory(entry, out)
-    } else if (entry.kind === 'file') {
-      const f = await entry.getFile()
-      if (isSupportedLocalFile(f)) out.push(f)
+export async function scanDirectory(dirHandle, out = [], stats) {
+  const s = stats || { scanned: 0, skipped: 0, errors: 0 }
+  try {
+    for await (const entry of dirHandle.values()) {
+      try {
+        // 跳过 Android 系统目录（无权限访问，QQ/百度浏览器常见）
+        if (entry.kind === 'directory' && /^Android(\/|$)/.test(entry.name)) {
+          continue
+        }
+        if (entry.kind === 'directory') {
+          await scanDirectory(entry, out, s)
+        } else if (entry.kind === 'file') {
+          s.scanned++
+          const f = await entry.getFile()
+          // 部分浏览器 getFile() 返回的 File.name 为空，用句柄自身 name 兜底
+          const name = f.name || entry.name || ''
+          const file = name && name !== f.name ? new File([f], name, { type: f.type }) : f
+          if (isSupportedLocalFile(file)) out.push(file)
+          else s.skipped++
+        }
+      } catch {
+        s.errors++
+      }
     }
+  } catch {
+    s.errors++
   }
   return out
 }
