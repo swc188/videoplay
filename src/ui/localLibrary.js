@@ -28,7 +28,8 @@ export const localLibraryMethods = {
 
   async _selectFolder() {
     if (!supportsDirectoryPicker()) {
-      this._showFolderNotSupportedToast()
+      toast('当前浏览器不支持文件夹选择，将使用多选文件替代', 'info')
+      this.fileInput.click()
       return
     }
     if (!window.showDirectoryPicker) { this.folderInput.click(); return }
@@ -42,13 +43,6 @@ export const localLibraryMethods = {
     }
     await saveDirHandle(handle)
     await this._loadFromHandle(handle)
-  },
-
-  /**
-   * 提示浏览器不支持文件夹选择，并提供替代方案
-   */
-  _showFolderNotSupportedToast() {
-    toast('当前浏览器不支持文件夹选择，请改用 Chrome 或 Edge，或点击"打开文件"选择多个视频', 'error')
   },
 
   /**
