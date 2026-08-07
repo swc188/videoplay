@@ -14,7 +14,7 @@ export const domBuilderMethods = {
     const main = el('div', { class: 'app-main' })
     this.root.append(main)
 
-    this.playerEl = el('div', { class: 'player ui-visible' })
+    this.playerEl = el('div', { class: 'player' })
     this.video = el('video', { playsinline: '', preload: 'auto' })
 
     this.subLayer = el('div', { class: 'subtitle-layer size-normal' })

@@ -23,7 +23,7 @@ export const playerEventsMethods = {
         clearTimeout(this.uiTimer)
         this.uiTimer = setTimeout(() => {
           if (!this.player.paused) {
-            this.playerEl.classList.remove('ui-visible')
+            this.playerEl.classList.add('ui-hidden')
           }
         }, 3000)
       },
@@ -36,7 +36,7 @@ export const playerEventsMethods = {
         this.bigPlay.append(icon('play', 30))
         // 暂停时显示 UI
         clearTimeout(this.uiTimer)
-        this.playerEl.classList.add('ui-visible')
+        this.playerEl.classList.remove('ui-hidden')
       },
       onPlaying: () => {
         this.spinner.classList.remove('show')

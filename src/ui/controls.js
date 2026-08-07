@@ -91,11 +91,11 @@ export class PlayerUI {
 
     // 鼠标移动显示 UI 并重置隐藏计时器
     this.playerEl.addEventListener('pointermove', () => {
-      this.playerEl.classList.add('ui-visible')
+      this.playerEl.classList.remove('ui-hidden')
       clearTimeout(this.uiTimer)
       if (!this.player.paused) {
         this.uiTimer = setTimeout(() => {
-          this.playerEl.classList.remove('ui-visible')
+          this.playerEl.classList.add('ui-hidden')
         }, 3000)
       }
     })
@@ -332,25 +332,25 @@ export class PlayerUI {
 
   /* ================= UI 显隐 ================= */
   _pokeUI() {
-    this.playerEl.classList.add('ui-visible')
+    this.playerEl.classList.remove('ui-hidden')
     clearTimeout(this.uiTimer)
     if (!this.player.paused) {
       this.uiTimer = setTimeout(() => {
-        this.playerEl.classList.remove('ui-visible')
+        this.playerEl.classList.add('ui-hidden')
       }, 3000)
     }
   }
 
   _toggleUI() {
-    if (this.playerEl.classList.contains('ui-visible')) {
-      this.playerEl.classList.remove('ui-visible')
+    if (this.playerEl.classList.contains('ui-hidden')) {
+      this.playerEl.classList.remove('ui-hidden')
       clearTimeout(this.uiTimer)
     } else {
-      this.playerEl.classList.add('ui-visible')
+      this.playerEl.classList.add('ui-hidden')
       clearTimeout(this.uiTimer)
       if (!this.player.paused) {
         this.uiTimer = setTimeout(() => {
-          this.playerEl.classList.remove('ui-visible')
+          this.playerEl.classList.add('ui-hidden')
         }, 3000)
       }
     }
