@@ -9,7 +9,8 @@ import { toast } from '../utils.js'
 function isLegacyChinaBrowser() {
   const ua = (navigator.userAgent || '').toLowerCase()
   return ua.includes('qqbrowser') || ua.includes('mqqbrowser') ||
-    ua.includes('baidu') || ua.includes('baiduboxapp') || ua.includes('bidubrowser')
+    ua.includes('baidu') || ua.includes('baiduboxapp') || ua.includes('bidubrowser') ||
+    ua.includes('baidubrowser')
 }
 
 /**
@@ -29,7 +30,7 @@ function supportsDirectoryPicker() {
 export const localLibraryMethods = {
   /* 打开程序自动加载本地视频库 */
   async _initLocalLibrary() {
-    if (!window.showDirectoryPicker) return
+    if (!supportsDirectoryPicker()) return
     const handle = await loadDirHandle()
     if (!handle) { this.renderPlaylist(); return }
     let perm = 'prompt'
@@ -49,7 +50,9 @@ export const localLibraryMethods = {
       handle = await window.showDirectoryPicker({ mode: 'read' })
     } catch (e) {
       if (e && e.name === 'AbortError') return
-      this.folderInput.click()
+      // showDirectoryPicker 不可用（QQ/百度等国产浏览器），回退到多选文件
+      toast('当前浏览器不支持文件夹选择，将使用多选文件替代', 'info')
+      this.fileInput.click()
       return
     }
     await saveDirHandle(handle)
