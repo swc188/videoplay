@@ -12,10 +12,14 @@ const DASH_EXTS = new Set(['mpd'])
 const FLV_EXTS = new Set(['flv'])
 const TS_EXTS = new Set(['ts', 'mts', 'm2ts'])
 
-// 浏览器 + 流式引擎都无法解码的容器，需要 ffmpeg.wasm 转码
+// 需要 ffmpeg.wasm 转码的格式（仅兼容浏览器不支持的格式）
 const TRANSCODE_EXTS = new Set([
-  'mkv', 'avi', 'wmv', 'asf', 'rm', 'rmvb', '3gp', 'vob', 'divx', 'xvid',
-  'mpg', 'mpeg', 'dat', 'mxf', 'nsv',
+  'rm', 'rmvb', '3gp', 'vob', 'divx', 'xvid', 'dat', 'mxf', 'nsv',
+])
+
+// 现代浏览器（Chrome/Edge/360）原生支持的格式，可直接播放
+const MODERN_BROWSER_NATIVE_EXTS = new Set([
+  'mkv', 'avi', 'wmv', 'asf', 'mpg', 'mpeg',
 ])
 
 const HLS_MIMES = [
@@ -26,19 +30,35 @@ const DASH_MIMES = ['application/dash+xml']
 const FLV_MIMES = ['video/x-flv', 'flv-application/octet-stream']
 const TS_MIMES = ['video/mp2t', 'video/mpeg', 'video/mp2p']
 
+/**
+ * 检测是否为现代浏览器（Chrome/Edge/360）
+ * 这些浏览器原生支持 MKV/AVI/WMV 等格式
+ */
+export function isModernBrowser() {
+  const ua = navigator.userAgent
+  // Chrome
+  if (/Chrome/.test(ua) && /Chromium/.test(ua) === false) return true
+  // Edge (Chromium-based)
+  if (/Edg/.test(ua)) return true
+  // 360 浏览器（双核模式，Chromium 内核）
+  if (/360/.test(ua) && /Chrome/.test(ua)) return true
+  return false
+}
+
 export function isNativeMime(mime = '') {
   if (!mime) return false
   return mime.startsWith('video/') || mime.startsWith('audio/')
 }
 
 /**
- * 扩展名是否在播放器可处理范围内（原生 / HLS / DASH / FLV / TS / 转码）
+ * 扩展名是否在播放器可处理范围内
  */
 export function isSupportedExtName(name = '') {
   const e = extname(name)
   if (!e) return false
   return NATIVE_EXTS.has(e) || HLS_EXTS.has(e) || DASH_EXTS.has(e) ||
-    FLV_EXTS.has(e) || TS_EXTS.has(e) || TRANSCODE_EXTS.has(e)
+    FLV_EXTS.has(e) || TS_EXTS.has(e) || TRANSCODE_EXTS.has(e) ||
+    (isModernBrowser() && MODERN_BROWSER_NATIVE_EXTS.has(e))
 }
 
 /**
@@ -60,19 +80,26 @@ export function isSupportedLocalFile(file) {
 export function detectKind({ url, mime, name }) {
   const ext = extname(name || url)
   const m = (mime || '').toLowerCase()
+  const modern = isModernBrowser()
 
   if (ext && HLS_EXTS.has(ext) || HLS_MIMES.includes(m)) return { kind: 'hls', ext }
   if (ext && DASH_EXTS.has(ext) || DASH_MIMES.includes(m)) return { kind: 'dash', ext }
   if (ext && FLV_EXTS.has(ext) || FLV_MIMES.includes(m)) return { kind: 'flv', ext }
   if (ext && TS_EXTS.has(ext) || TS_MIMES.includes(m)) return { kind: 'ts', ext }
-  // 需要转码的格式（先尝试原生播放，失败后降级到转码）
-  if (ext && TRANSCODE_EXTS.has(ext)) return { kind: 'transcode-or-native', ext }
+
+  // 现代浏览器直接原生播放
+  if (modern && (NATIVE_EXTS.has(ext) || MODERN_BROWSER_NATIVE_EXTS.has(ext))) {
+    return { kind: 'native', ext }
+  }
+
+  // 旧格式需要转码
+  if (ext && TRANSCODE_EXTS.has(ext)) return { kind: 'transcode', ext }
 
   if (ext && NATIVE_EXTS.has(ext)) return { kind: 'native', ext }
   if (isNativeMime(m)) return { kind: 'native', ext }
   // 无扩展名/未知：先尝试原生播放，失败再走转码
   if (!ext) return { kind: 'unknown', ext }
-  return { kind: 'transcode-or-native', ext }
+  return { kind: 'transcode', ext }
 }
 
 export const needTranscode = (kind) => kind === 'transcode'
