@@ -5,13 +5,11 @@ import { preloadTranscoder } from './player/transcoder.js'
 
 const ui = new PlayerUI(document.getElementById('app'))
 
-// 预加载 ffmpeg.wasm（约 24MB），保证本地转码视频秒开。
-// 页面 load 后延迟启动，避免与首屏渲染抢带宽；优先用 idle 回调，未触发则用定时器兜底
+// 预加载 ffmpeg.wasm（约 24MB），保证本地转码视频秒开
 const startPreload = () => preloadTranscoder()
 window.addEventListener('load', () => {
   if ('requestIdleCallback' in window) {
     window.requestIdleCallback(startPreload, { timeout: 6000 })
-    // 兜底：idle 在 headless/繁忙场景可能不触发
     setTimeout(startPreload, 4000)
   } else {
     setTimeout(startPreload, 2500)
@@ -25,12 +23,18 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   })
 }
 
-// 支持 ?url= 直链播放
+// 支持直链播放：
+//   ?src= / ?url=（生产环境可用；Vite dev 对 ?url= 保留字会返回 403，故优先 ?src=）
+//   #src= / #url=（hash 参数，dev / prod 均可用）
 const params = new URLSearchParams(location.search)
-const u = params.get('url')
-if (u) {
-  ui.loadUrl(u, params.get('title') || undefined)
+let u = params.get('src') || params.get('url')
+let title = params.get('title')
+if (!u) {
+  const hash = new URLSearchParams(location.hash.replace(/^#/, ''))
+  u = hash.get('src') || hash.get('url')
+  title = hash.get('title') || title
 }
+if (u) ui.loadUrl(u, title || undefined)
 
 // 未开启浏览器服务时提示
 if (!window.isSecureContext) {

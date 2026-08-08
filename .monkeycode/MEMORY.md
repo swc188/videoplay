@@ -57,6 +57,15 @@ Entries discovered by the Agent while performing [specific task description] sho
   - scripts/patch-ffmpeg.js now only validates package versions (0.12.x doesn't need patches)
 
 [Project Knowledge Summary]
+- Date: 2026-08-08
+- Context: Discovered by Agent while diagnosing "all browsers show blank page / playback broken" reported by user on the dev preview link
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - Vite dev server treats `?url=` as a reserved import query: a request like `/?url=https://example.com/a.mp4` returns 403 "outside of Vite serving allow list", blank page, in ALL browsers (production build is unaffected)
+  - Web app direct-play links must use `?src=` (or hash `#url=`) instead of `?url=` so they work on both Vite dev and production
+  - To tell dev-server 403 from real network 403: body contains "Vite serving allow list" / "server-fs-allow" message
+
+[Project Knowledge Summary]
 - Date: 2026-02-04
 - Context: Discovered by Agent while implementing cross-device video player UI show/hide toggle feature
 - Category: Troubleshooting & Debugging

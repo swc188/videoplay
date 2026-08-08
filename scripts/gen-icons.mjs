@@ -1,8 +1,9 @@
-import zlib from 'node:zlib'
-import fs from 'node:fs'
-import path from 'node:path'
+import { deflateSync } from 'node:zlib'
+import { writeFileSync, mkdirSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
 
-// ---- PNG encoder ----
+const OUT_DIR = resolve(process.cwd(), 'public/icons')
+
 const CRC_TABLE = (() => {
   const t = new Uint32Array(256)
   for (let n = 0; n < 256; n++) {
@@ -22,106 +23,98 @@ function crc32(buf) {
 function chunk(type, data) {
   const len = Buffer.alloc(4)
   len.writeUInt32BE(data.length)
-  const t = Buffer.from(type, 'ascii')
+  const body = Buffer.concat([Buffer.from(type, 'ascii'), data])
   const crc = Buffer.alloc(4)
-  crc.writeUInt32BE(crc32(Buffer.concat([t, data])))
-  return Buffer.concat([len, t, data, crc])
+  crc.writeUInt32BE(crc32(body))
+  return Buffer.concat([len, body, crc])
 }
 
-function encodePNG(width, height, rgba) {
+function encodePng(width, height, rgba) {
   const sig = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
   const ihdr = Buffer.alloc(13)
   ihdr.writeUInt32BE(width, 0)
   ihdr.writeUInt32BE(height, 4)
-  ihdr[8] = 8 // bit depth
-  ihdr[9] = 6 // color type RGBA
-  const raw = Buffer.alloc(height * (1 + width * 4))
+  ihdr[8] = 8   // bit depth
+  ihdr[9] = 6   // RGBA
+  const raw = Buffer.alloc((width * 4 + 1) * height)
   for (let y = 0; y < height; y++) {
-    const rowStart = y * (1 + width * 4)
-    raw[rowStart] = 0
-    for (let x = 0; x < width; x++) {
-      const si = (y * width + x) * 4
-      const di = rowStart + 1 + x * 4
-      raw[di] = rgba[si]
-      raw[di + 1] = rgba[si + 1]
-      raw[di + 2] = rgba[si + 2]
-      raw[di + 3] = rgba[si + 3]
-    }
+    raw[y * (width * 4 + 1)] = 0 // filter none
+    rgba.copy(raw, y * (width * 4 + 1) + 1, y * width * 4, (y + 1) * width * 4)
   }
-  const idat = zlib.deflateSync(raw, { level: 9 })
+  const idat = deflateSync(raw, { level: 9 })
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', Buffer.alloc(0))])
 }
 
-// ---- Rounded rect SDF ----
-function roundRectAlpha(x, y, w, h, r) {
-  const hw = w / 2, hh = h / 2
-  const qx = Math.abs(x - hw) - (hw - r)
-  const qy = Math.abs(y - hh) - (hh - r)
-  const ox = Math.max(qx, 0), oy = Math.max(qy, 0)
-  const inside = Math.min(Math.max(qx, qy), 0)
-  const dist = Math.hypot(ox, oy) + inside - r
-  return Math.max(0, Math.min(1, 0.5 - dist))
+function inRoundRect(x, y, size, r) {
+  if (x < 0 || y < 0 || x >= size || y >= size) return false
+  if (x >= r && x < size - r) return true
+  if (y >= r && y < size - r) return true
+  const cx = x < size / 2 ? r : size - r - 1
+  const cy = y < size / 2 ? r : size - r - 1
+  const dx = x - cx
+  const dy = y - cy
+  return dx * dx + dy * dy <= r * r
 }
 
-function triangleContains(px, py, a, b, c) {
-  const d1 = (px - a[0]) * (b[1] - a[1]) - (py - a[1]) * (b[0] - a[0])
-  const d2 = (px - b[0]) * (c[1] - b[1]) - (py - b[1]) * (c[0] - b[0])
-  const d3 = (px - c[0]) * (a[1] - c[1]) - (py - c[1]) * (a[0] - c[0])
-  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0
-  const hasPos = d1 > 0 || d2 > 0 || d3 > 0
-  return !(hasNeg && hasPos)
+function inTriangle(px, py, a, b, c) {
+  const sign = (p1, p2, p3) => (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+  const d1 = sign([px, py], a, b)
+  const d2 = sign([px, py], b, c)
+  const d3 = sign([px, py], c, a)
+  const neg = d1 < 0 || d2 < 0 || d3 < 0
+  const pos = d1 > 0 || d2 > 0 || d3 > 0
+  return !(neg && pos)
 }
 
-function lerp(a, b, t) { return Math.round(a + (b - a) * t) }
-
-function render(size) {
-  const rgba = new Uint8Array(size * size * 4)
-  const SS = 3 // supersample
+function renderIcon(size) {
+  const rgba = Buffer.alloc(size * size * 4)
+  const r = Math.round(size * 0.22)
   const cx = size / 2
   const cy = size / 2
-  const tW = size * 0.5   // 三角宽
-  const tH = size * 0.62  // 三角高
-  const A = [cx - tW / 2, cy - tH / 2]
-  const B = [cx - tW / 2, cy + tH / 2]
-  const C = [cx + tW * 0.62, cy]
+  const w = size * 0.34
+  const h = size * 0.4
+  const top = [cx - w / 2, cy - h / 2]
+  const right = [cx + w / 2, cy]
+  const bottom = [cx - w / 2, cy + h / 2]
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      let bgA = 0, tri = 0, samples = 0
-      for (let sy = 0; sy < SS; sy++) {
-        for (let sx = 0; sx < SS; sx++) {
-          const px = x + (sx + 0.5) / SS
-          const py = y + (sy + 0.5) / SS
-          bgA += roundRectAlpha(px, py, size, size, size * 0.225)
-          if (triangleContains(px, py, A, B, C)) tri++
-          samples++
-        }
+      const i = (y * size + x) * 4
+      if (!inRoundRect(x, y, size, r)) {
+        rgba[i] = rgba[i + 1] = rgba[i + 2] = rgba[i + 3] = 0
+        continue
       }
-      bgA /= samples
-      const triA = tri / samples
-      const t = (x + y) / (2 * size)
-      const bgR = 255
-      const bgG = lerp(77, 122, t)
-      const bgB = lerp(79, 69, t)
-      const R = bgR * (1 - triA) + 255 * triA
-      const G = bgG * (1 - triA) + 255 * triA
-      const Bb = bgB * (1 - triA) + 255 * triA
-      const alpha = Math.round(bgA * 255)
-      const idx = (y * size + x) * 4
-      if (alpha > 0) {
-        rgba[idx] = Math.round(R)
-        rgba[idx + 1] = Math.round(G)
-        rgba[idx + 2] = Math.round(Bb)
-        rgba[idx + 3] = alpha
+      // 垂直渐变背景
+      const t = y / size
+      const rB = Math.round(124 + (62 - 124) * t)
+      const gB = Math.round(92 + (36 - 92) * t)
+      const bB = Math.round(255 + (140 - 255) * t)
+      rgba[i] = rB
+      rgba[i + 1] = gB
+      rgba[i + 2] = bB
+      rgba[i + 3] = 255
+      // 播放三角
+      if (inTriangle(x, y, top, right, bottom)) {
+        rgba[i] = rgba[i + 1] = rgba[i + 2] = 255
       }
     }
   }
-  return rgba
+  return encodePng(size, size, rgba)
 }
 
-const outDir = path.resolve('public/icons')
-fs.mkdirSync(outDir, { recursive: true })
-for (const size of [192, 512]) {
-  fs.writeFileSync(path.join(outDir, `icon-${size}.png`), encodePNG(size, size, render(size)))
-}
-console.log('icons generated ->', outDir)
+const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="1" stop-color="#3e248c"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#g)"/>
+  <path d="M198 150v212l170-106z" fill="#ffffff"/>
+</svg>`
+
+mkdirSync(OUT_DIR, { recursive: true })
+writeFileSync(resolve(OUT_DIR, 'icon.svg'), SVG)
+writeFileSync(resolve(OUT_DIR, 'icon-192.png'), renderIcon(192))
+writeFileSync(resolve(OUT_DIR, 'icon-512.png'), renderIcon(512))
+console.log(`icons generated -> ${OUT_DIR}`)

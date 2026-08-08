@@ -5,11 +5,10 @@ let ffmpeg = null
 let loadingPromise = null
 let lastDuration = 0
 
-// 转码需要把整个文件读入内存并在 wasm 内存中复制一份，
-// 超大文件会导致浏览器标签页内存耗尽而崩溃白屏，这里设置安全上限
+// 转码需把整个文件读入内存并复制进 wasm，超大文件会让标签页内存耗尽。
 export const MAX_TRANSCODE_SIZE = 400 * 1024 * 1024
 
-// 转码结果缓存：同一文件（按 文件名|大小 区分）只转码一次，重复点击秒播
+// 转码结果缓存：同一文件（文件名|大小）只转码一次
 const transcodeCache = new Map()
 const TRANSCODE_CACHE_MAX = 12
 
@@ -28,7 +27,7 @@ async function loadFFmpeg() {
   if (loadingPromise) return loadingPromise
   loadingPromise = (async () => {
     const instance = new FFmpeg()
-    // 使用 public 目录下的本地文件，避免 package exports 限制
+    // 单线程版 core 从本地加载，避免 CDN 与 exports 限制
     const coreURL = new URL('/ffmpeg-core/ffmpeg-core.js', import.meta.url).href
     const wasmURL = new URL('/ffmpeg-core/ffmpeg-core.wasm', import.meta.url).href
     await instance.load({ coreURL, wasmURL })
@@ -40,8 +39,8 @@ async function loadFFmpeg() {
 
 /**
  * 用 ffmpeg.wasm 把任意格式转码为 MP4
- * @param {File|Blob} file 源文件
- * @param {Object} opts { onProgress(pct), onEngineLoad, signal }
+ * @param {File|Blob} file
+ * @param {{onProgress?:Function, onEngineLoad?:Function, signal?:AbortSignal}} opts
  * @returns {Promise<Blob>}
  */
 export async function transcodeFile(file, { onProgress, onEngineLoad, signal } = {}) {
@@ -109,7 +108,7 @@ export function isTranscoderReady() {
 }
 
 /**
- * 空闲预加载 ffmpeg.wasm，避免首次转码时现场下载 24MB core 造成长时间无反馈等待
+ * 空闲预加载 ffmpeg core，避免首次转码时现场加载 24MB 长时间无反馈
  */
 export function preloadTranscoder() {
   if (ffmpeg || loadingPromise) return loadingPromise || Promise.resolve()
@@ -118,9 +117,6 @@ export function preloadTranscoder() {
   return p
 }
 
-/**
- * 获取 ffmpeg.wasm 实例（供测试或高级用法执行任意命令）
- */
 export function getFFmpegInstance() {
   return loadFFmpeg()
 }

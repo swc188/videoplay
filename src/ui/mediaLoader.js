@@ -85,7 +85,8 @@ export const mediaLoaderMethods = {
       this.tp.classList.remove('show')
       toast('转码完成，开始播放', 'success')
       const url = URL.createObjectURL(blob)
-      await this.player.load({ type: 'url', url, title: this.currentItem?.title || '转码结果' })
+      // blob URL 无扩展名，必须显式指定 kind 为 native，否则会再次误判为转码
+      await this.player.load({ type: 'url', url, title: this.currentItem?.title || '转码结果', kind: 'native' })
       this.player.play()
     }).catch((e) => {
       this.transcodeAbort = null

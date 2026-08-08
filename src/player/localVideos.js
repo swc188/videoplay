@@ -33,7 +33,7 @@ function idbPut(db, value, key) {
 }
 
 /**
- * 读取已持久化的本地视频目录句柄（无则返回 null）
+ * 读取已持久化的本地视频目录句柄
  */
 export async function loadDirHandle() {
   try {
@@ -45,7 +45,7 @@ export async function loadDirHandle() {
 }
 
 /**
- * 持久化用户授权的目录句柄，供下次打开程序时自动恢复
+ * 持久化用户授权的目录句柄
  */
 export async function saveDirHandle(handle) {
   try {
@@ -58,27 +58,21 @@ export async function saveDirHandle(handle) {
 }
 
 /**
- * 递归扫描目录（含所有子目录），收集播放器支持的全部媒体文件。
- * 跳过 Android 系统目录（Android/data 等无权限），单条目失败不中断扫描。
- * 使用 async yield 让出主线程，避免大文件夹扫描时页面卡死。
+ * 递归扫描目录，收集支持的全部媒体文件。
+ * 跳过 Android 系统目录，单条目失败不中断，用 yield 让出主线程防止卡死。
  */
 export async function scanDirectory(dirHandle, out = [], stats) {
   const s = stats || { scanned: 0, skipped: 0, errors: 0 }
-  // 让出主线程，避免阻塞 UI
-  await new Promise(r => setTimeout(r, 0))
+  await new Promise((r) => setTimeout(r, 0))
   try {
     for await (const entry of dirHandle.values()) {
       try {
-        // 跳过 Android 系统目录（无权限访问，QQ/百度浏览器常见）
-        if (entry.kind === 'directory' && /^Android(\/|$)/.test(entry.name)) {
-          continue
-        }
         if (entry.kind === 'directory') {
+          if (/^Android(\/|$)/.test(entry.name)) continue
           await scanDirectory(entry, out, s)
         } else if (entry.kind === 'file') {
           s.scanned++
           const f = await entry.getFile()
-          // 部分浏览器 getFile() 返回的 File.name 为空，用句柄自身 name 兜底
           const name = f.name || entry.name || ''
           const file = name && name !== f.name ? new File([f], name, { type: f.type }) : f
           if (isSupportedLocalFile(file)) out.push(file)
