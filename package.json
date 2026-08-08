@@ -8,8 +8,7 @@
     "dev": "vite",
     "build": "node scripts/gen-icons.mjs && vite build",
     "preview": "vite preview",
-    "gen-icons": "node scripts/gen-icons.mjs",
-    "postinstall": "node scripts/patch-ffmpeg.js"
+    "gen-icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.10",
