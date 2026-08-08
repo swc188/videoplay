@@ -65,13 +65,14 @@ export function detectKind({ url, mime, name }) {
   if (ext && DASH_EXTS.has(ext) || DASH_MIMES.includes(m)) return { kind: 'dash', ext }
   if (ext && FLV_EXTS.has(ext) || FLV_MIMES.includes(m)) return { kind: 'flv', ext }
   if (ext && TS_EXTS.has(ext) || TS_MIMES.includes(m)) return { kind: 'ts', ext }
-  if (ext && TRANSCODE_EXTS.has(ext)) return { kind: 'transcode', ext }
+  // 需要转码的格式（先尝试原生播放，失败后降级到转码）
+  if (ext && TRANSCODE_EXTS.has(ext)) return { kind: 'transcode-or-native', ext }
 
   if (ext && NATIVE_EXTS.has(ext)) return { kind: 'native', ext }
   if (isNativeMime(m)) return { kind: 'native', ext }
   // 无扩展名/未知：先尝试原生播放，失败再走转码
   if (!ext) return { kind: 'unknown', ext }
-  return { kind: 'transcode', ext }
+  return { kind: 'transcode-or-native', ext }
 }
 
 export const needTranscode = (kind) => kind === 'transcode'

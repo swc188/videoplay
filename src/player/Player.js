@@ -55,7 +55,12 @@ export class Player {
       this.objectUrl = URL.createObjectURL(source.file)
       url = this.objectUrl
       const det = detectKind({ mime: source.file.type, name: source.file.name })
-      kind = det.kind
+      // transcode-or-native：先尝试原生播放，失败后降级到转码
+      if (det.kind === 'transcode-or-native') {
+        kind = 'native'
+      } else {
+        kind = det.kind
+      }
     } else {
       if (!kind) {
         kind = detectKind({ url, mime: source.mime, name: source.name || url }).kind
