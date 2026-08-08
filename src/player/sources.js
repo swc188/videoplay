@@ -39,11 +39,12 @@ export function isModernBrowser() {
   if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent
   // Edge (Chromium-based) - 必须在 Chrome 之前检测
-  if (/Edg[e]/i.test(ua)) return true
+  // Edge UA 格式: "Edg/" 或 "Edge/"
+  if (/Edg[/e]/i.test(ua) || /Edge\//i.test(ua)) return true
   // 360 浏览器 - 必须包含 Chrome
   if (/360/.test(ua) && /Chrome/.test(ua)) return true
-  // Chrome (排除 Chromium、QQ、百度等修改版)
-  if (/Chrome/.test(ua) && !/Chromium/.test(ua) && !/QQBrowser/.test(ua) && !/Baidu/.test(ua) && !/Edge/.test(ua)) return true
+  // Chrome (排除 Chromium、QQ、百度、Edge 等修改版)
+  if (/Chrome/.test(ua) && !/Chromium/.test(ua) && !/QQBrowser/.test(ua) && !/Baidu/.test(ua) && !/Edge/.test(ua) && !/Edg/.test(ua)) return true
   return false
 }
 
