@@ -58,6 +58,16 @@ Entries discovered by the Agent while performing [specific task description] sho
 
 [Project Knowledge Summary]
 - Date: 2026-08-08
+- Context: Discovered by Agent while fixing Edge/Chrome "video won't play" (360 fine) and ffmpeg transcode hang in Vite dev
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - 360 browser ships built-in HEVC/extra codec decoders, so HEVC-encoded MP4 plays natively; Edge/Chrome fail with video error code 3/4 (no decoder) — the app must auto-fallback to ffmpeg.wasm transcode on code 3 or 4 (mediaLoader._fallbackTranscode), not just show an error
+  - Vite optimizeDeps pre-bundling of @ffmpeg/ffmpeg breaks `new Worker(new URL('./worker.js', import.meta.url))` → /node_modules/.vite/deps/worker.js 404 → ffmpeg load hangs forever with no logs; fix: `optimizeDeps: { exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/core'] }` in vite.config.js (load drops from 45s+ hang to ~2s)
+  - ffmpeg wasm engine loads ~2s once fixed; transcoding a 1.8s webm takes ~3s in headless
+  - Diagnostic trick: importing and manually initializing ffmpeg-core on the main thread works (7-8s), so a hang is specific to the worker path, not wasm fetch/compile
+
+[Project Knowledge Summary]
+- Date: 2026-08-08
 - Context: Discovered by Agent while diagnosing "all browsers show blank page / playback broken" reported by user on the dev preview link
 - Category: Troubleshooting & Debugging
 - Instructions:

@@ -95,12 +95,10 @@ export const playerEventsMethods = {
         if (code === 2) {
           toast('网络错误，无法加载媒体资源', 'error')
           this._restoreEmpty()
-        } else if (code === 3) {
-          toast('媒体解码失败，文件可能已损坏或编码不受支持', 'error')
-          this._restoreEmpty()
-        } else if (this.currentItem && code === 4) {
-          // 源不受支持：尝试转码
-          this._handleError(new Error('该格式不受浏览器支持'))
+        } else if (code === 3 || code === 4) {
+          // 解码失败 / 格式不受支持（如 HEVC 编码的 MP4，Edge/Chrome 无内置解码器）：
+          // 自动回退 ffmpeg.wasm 转码播放
+          this._fallbackTranscode()
         }
       },
     }
