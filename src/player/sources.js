@@ -33,15 +33,16 @@ const TS_MIMES = ['video/mp2t', 'video/mpeg', 'video/mp2p']
 /**
  * 检测是否为现代浏览器（Chrome/Edge/360）
  * 这些浏览器原生支持 MKV/AVI/WMV 等格式
+ * QQ浏览器/百度浏览器虽然基于Chromium但解码能力有限，不走现代浏览器路径
  */
 export function isModernBrowser() {
   const ua = navigator.userAgent
-  // Edge (Chromium-based) - 必须在 Chrome 检测之前
+  // Edge (Chromium-based)
   if (/Edg[e]/i.test(ua)) return true
   // 360 浏览器
   if (/360/.test(ua) && /Chrome/.test(ua)) return true
-  // Chrome (排除 Chromium)
-  if (/Chrome/.test(ua) && !/Chromium/.test(ua)) return true
+  // Chrome (排除 Chromium、QQ、百度等修改版)
+  if (/Chrome/.test(ua) && !/Chromium/.test(ua) && !/QQBrowser/.test(ua) && !/Baidu/.test(ua)) return true
   return false
 }
 
