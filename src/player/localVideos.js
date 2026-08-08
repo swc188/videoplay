@@ -63,9 +63,13 @@ export async function saveDirHandle(handle) {
  */
 export async function scanDirectory(dirHandle, out = [], stats) {
   const s = stats || { scanned: 0, skipped: 0, errors: 0 }
+  let seen = 0
   await new Promise((r) => setTimeout(r, 0))
   try {
     for await (const entry of dirHandle.values()) {
+      // 每 32 个条目让出主线程：for await + getFile 会产生微任务风暴，
+      // 大目录下会阻塞 rAF 几十秒，表现为页面卡死无响应
+      if ((seen++ & 31) === 0) await new Promise((r) => setTimeout(r, 0))
       try {
         if (entry.kind === 'directory') {
           if (/^Android(\/|$)/.test(entry.name)) continue

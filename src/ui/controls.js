@@ -304,6 +304,9 @@ export class PlayerUI {
 
   /* ================= 播放列表渲染 ================= */
   renderPlaylist() {
+    // 分块渲染：大列表（数千个视频）一次性构建 DOM 会阻塞主线程数十秒
+    this._plRenderToken = (this._plRenderToken || 0) + 1
+    const token = this._plRenderToken
     this.plList.innerHTML = ''
     const items = this.playlist.items
     if (!items.length) {
@@ -313,20 +316,33 @@ export class PlayerUI {
       ]))
       return
     }
-    items.forEach((item, idx) => {
-      const row = el('div', { class: 'pl-item' + (item.id === this.currentItem?.id ? ' active' : '') }, [
-        el('span', { class: 'pl-index' }, String(idx + 1)),
-        el('span', { class: 'pl-title' }, item.title),
-        el('span', { class: 'pl-type' }, item.kind || (item.source.type === 'file' ? 'file' : 'net')),
-        el('button', { class: 'pl-del', type: 'button', title: '移除' }, [icon('trash', 14)]),
-      ])
-      row.addEventListener('click', (e) => {
-        if (e.target.closest('.pl-del')) { this.playlist.remove(item.id); return }
-        if (item.id !== this.currentItem?.id) this.playItem(item.id)
-        this.plList.focus({ preventScroll: true })
-      })
-      this.plList.append(row)
-    })
+    const CHUNK = 200
+    const build = (start, end) => {
+      for (let idx = start; idx < end && idx < items.length; idx++) {
+        const item = items[idx]
+        const row = el('div', { class: 'pl-item' + (item.id === this.currentItem?.id ? ' active' : '') }, [
+          el('span', { class: 'pl-index' }, String(idx + 1)),
+          el('span', { class: 'pl-title' }, item.title),
+          el('span', { class: 'pl-type' }, item.kind || (item.source.type === 'file' ? 'file' : 'net')),
+          el('button', { class: 'pl-del', type: 'button', title: '移除' }, [icon('trash', 14)]),
+        ])
+        row.addEventListener('click', (e) => {
+          if (e.target.closest('.pl-del')) { this.playlist.remove(item.id); return }
+          if (item.id !== this.currentItem?.id) this.playItem(item.id)
+          this.plList.focus({ preventScroll: true })
+        })
+        this.plList.append(row)
+      }
+    }
+    let i = 0
+    const next = () => {
+      if (token !== this._plRenderToken) return
+      build(i, i + CHUNK)
+      i += CHUNK
+      if (i < items.length) requestAnimationFrame(next)
+    }
+    build(0, CHUNK)
+    if (items.length > CHUNK) requestAnimationFrame(next)
   }
 
 

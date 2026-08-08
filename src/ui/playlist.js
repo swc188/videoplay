@@ -31,6 +31,20 @@ export class Playlist {
     })
   }
 
+  // 批量加入本地文件，仅触发一次 onChange，避免逐个 addFile 导致多次全量渲染卡死
+  addFiles(files) {
+    const entries = files.map((file) => ({
+      id: uid(),
+      title: file.name,
+      source: { type: 'file', file },
+      persistable: false,
+      kind: extname(file.name),
+    }))
+    this.items.push(...entries)
+    this._emit()
+    return entries
+  }
+
   addUrl(url, title) {
     return this.add({
       title: title || url,

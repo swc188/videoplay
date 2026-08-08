@@ -66,7 +66,11 @@ export const localLibraryMethods = {
     const list = [...files].filter(isSupportedLocalFile)
     if (!list.length) { toast('该文件夹下没有找到支持播放的视频文件', 'error'); return }
     list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
-    list.forEach((f) => this.playlist.addFile(f))
+    if (this.playlist.addFiles) {
+      this.playlist.addFiles(list)
+    } else {
+      list.forEach((f) => this.playlist.addFile(f))
+    }
     this.renderPlaylist()
     toast(`已加载 ${list.length} 个本地视频，点击列表播放`, 'success')
   },
