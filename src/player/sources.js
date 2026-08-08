@@ -42,17 +42,17 @@ export function isModernBrowser() {
  */
 export function isNativeSupported(ext) {
   if (!ext) return false
-  
+
   // 所有浏览器都支持的基础格式
   const universalNativeExts = new Set([
     'mp4', 'm4v', 'm4a', 'mov', 'webm', 'ogv', 'ogg', 'mp3', 'wav', 'aac', 'flac'
   ])
-  
+
   // 现代浏览器额外支持的格式
   const modernNativeExts = new Set([
     'mkv', 'avi', 'wmv', 'asf', 'mpg', 'mpeg', 'flv', 'ts', 'mts', 'm2ts'
   ])
-  
+
   if (universalNativeExts.has(ext)) return true
   if (isModernBrowser() && modernNativeExts.has(ext)) return true
   return false
@@ -102,20 +102,20 @@ export function detectKind({ url = '', mime = '', name = '' }) {
  */
 export function isSupportedLocalFile(file) {
   if (!file || !file.name) return false
-  
+
   const ext = extname(file.name)
   if (!ext) return false
-  
+
   // 排除仅限网络流的格式
   if (ext === 'm3u8' || ext === 'mpd') return false
-  
+
   // 检查 MIME 类型
   const type = (file.type || '').toLowerCase()
   if (type.startsWith('video/') || type.startsWith('audio/')) return true
-  
-  // 检查扩展名
+
+  // 检查扩展名 - 所有视频格式都允许（现代浏览器原生播放，旧浏览器转码）
   if (isNativeSupported(ext)) return true
-  
+
   // 不支持的格式也允许选择（会触发转码）
   return false
 }
