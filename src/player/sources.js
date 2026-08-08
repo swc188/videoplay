@@ -36,12 +36,12 @@ const TS_MIMES = ['video/mp2t', 'video/mpeg', 'video/mp2p']
  */
 export function isModernBrowser() {
   const ua = navigator.userAgent
-  // Chrome
-  if (/Chrome/.test(ua) && /Chromium/.test(ua) === false) return true
-  // Edge (Chromium-based)
-  if (/Edg/.test(ua)) return true
-  // 360 浏览器（双核模式，Chromium 内核）
+  // Edge (Chromium-based) - 必须在 Chrome 检测之前
+  if (/Edg[e]/i.test(ua)) return true
+  // 360 浏览器
   if (/360/.test(ua) && /Chrome/.test(ua)) return true
+  // Chrome (排除 Chromium)
+  if (/Chrome/.test(ua) && !/Chromium/.test(ua)) return true
   return false
 }
 
