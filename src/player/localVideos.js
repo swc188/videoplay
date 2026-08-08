@@ -60,9 +60,12 @@ export async function saveDirHandle(handle) {
 /**
  * 递归扫描目录（含所有子目录），收集播放器支持的全部媒体文件。
  * 跳过 Android 系统目录（Android/data 等无权限），单条目失败不中断扫描。
+ * 使用 async yield 让出主线程，避免大文件夹扫描时页面卡死。
  */
 export async function scanDirectory(dirHandle, out = [], stats) {
   const s = stats || { scanned: 0, skipped: 0, errors: 0 }
+  // 让出主线程，避免阻塞 UI
+  await new Promise(r => setTimeout(r, 0))
   try {
     for await (const entry of dirHandle.values()) {
       try {

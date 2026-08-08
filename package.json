@@ -8,11 +8,12 @@
     "dev": "vite",
     "build": "node scripts/gen-icons.mjs && vite build",
     "preview": "vite preview",
-    "gen-icons": "node scripts/gen-icons.mjs"
+    "gen-icons": "node scripts/gen-icons.mjs",
+    "postinstall": "node scripts/patch-ffmpeg.js"
   },
   "dependencies": {
-    "@ffmpeg/core": "0.11.0",
-    "@ffmpeg/ffmpeg": "0.11.6",
+    "@ffmpeg/core": "^0.12.10",
+    "@ffmpeg/ffmpeg": "^0.12.15",
     "dashjs": "^4.7.4",
     "hls.js": "^1.5.17",
     "mpegts.js": "^1.7.3"

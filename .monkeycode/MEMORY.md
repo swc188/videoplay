@@ -32,6 +32,19 @@ Entries discovered by the Agent while performing [specific task description] sho
 ## Entries
 
 [Project Knowledge Summary]
+- Date: 2026-08-08
+- Context: Discovered by Agent while fixing Edge transcoder "bad memory" error, Chrome file input unresponsiveness, and ffmpeg "can only run one command at a time" error; upgraded to @ffmpeg 0.12.x single-threaded version
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - @ffmpeg/core 0.11.0 unconditionally creates shared WebAssembly.Memory and throws "bad memory" when buffer is not a real SharedArrayBuffer (fails in Edge even with polyfill)
+  - Chrome file input click() on display:none elements requires tabindex="0" to reliably trigger; add focus/blur handlers to keep visibility
+  - @ffmpeg/ffmpeg 0.11.6 throws "can only run one command at a time" on subsequent transcoding in Edge because FFMPEG_END doesn't fire with non-shared memory
+  - Upgrade to @ffmpeg/core@0.12.10 and @ffmpeg/ffmpeg@0.12.15 (single-threaded, no SAB requirement) to fix all Edge transcoder issues
+  - 0.12.x API changes: createFFmpeg() -> new FFmpeg(), ff.run() -> ff.exec(), ff.FS() -> ff.writeFile/readFile/deleteFile(), ff.setLogger() -> ff.on('log', cb)
+  - ffmpeg-core.js/wasm must be placed in public/ffmpeg-core/ directory; load using absolute URLs: new URL('/ffmpeg-core/ffmpeg-core.js', import.meta.url).href
+  - scripts/patch-ffmpeg.js now only validates package versions (0.12.x doesn't need patches)
+
+[Project Knowledge Summary]
 - Date: 2026-02-04
 - Context: Discovered by Agent while implementing cross-device video player UI show/hide toggle feature
 - Category: Troubleshooting & Debugging

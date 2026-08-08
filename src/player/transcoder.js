@@ -1,10 +1,5 @@
+import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { extname } from '../utils.js'
-
-// 非 crossOriginIsolated 环境（缺少 COOP/COEP 响应头）下 SharedArrayBuffer 不可用，
-// Emscripten 运行时会无条件引用该标识符，这里用 ArrayBuffer 兜底避免初始化抛错
-if (typeof globalThis.SharedArrayBuffer === 'undefined') {
-  globalThis.SharedArrayBuffer = globalThis.ArrayBuffer
-}
 
 let ffmpeg = null
 let loadingPromise = null
@@ -22,41 +17,31 @@ function transcodeKey(file) {
   return `${file.name}|${file.size}`
 }
 
-function toAbs(url) {
-  return new URL(url, import.meta.url).href
-}
-
-async function loadFFmpeg() {
-  if (ffmpeg) return ffmpeg
-  if (loadingPromise) return loadingPromise
-  loadingPromise = (async () => {
-    const { createFFmpeg } = await import('@ffmpeg/ffmpeg')
-    const coreJs = (await import('@ffmpeg/core/dist/ffmpeg-core.js?url')).default
-    const coreWasm = (await import('@ffmpeg/core/dist/ffmpeg-core.wasm?url')).default
-    const coreWorker = (await import('@ffmpeg/core/dist/ffmpeg-core.worker.js?url')).default
-    const instance = createFFmpeg({
-      corePath: toAbs(coreJs),
-      wasmPath: toAbs(coreWasm),
-      workerPath: toAbs(coreWorker),
-      log: true,
-    })
-    await instance.load()
-    ffmpeg = instance
-    return instance
-  })()
-  return loadingPromise
-}
-
 function parseTimeToSeconds(str) {
   const m = str.match(/(\d+):(\d+):(\d+(?:\.\d+)?)/)
   if (!m) return null
   return Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3])
 }
 
+async function loadFFmpeg() {
+  if (ffmpeg) return ffmpeg
+  if (loadingPromise) return loadingPromise
+  loadingPromise = (async () => {
+    const instance = new FFmpeg()
+    // 使用 public 目录下的本地文件，避免 package exports 限制
+    const coreURL = new URL('/ffmpeg-core/ffmpeg-core.js', import.meta.url).href
+    const wasmURL = new URL('/ffmpeg-core/ffmpeg-core.wasm', import.meta.url).href
+    await instance.load({ coreURL, wasmURL })
+    ffmpeg = instance
+    return instance
+  })()
+  return loadingPromise
+}
+
 /**
  * 用 ffmpeg.wasm 把任意格式转码为 MP4
  * @param {File|Blob} file 源文件
- * @param {Object} opts { onProgress(pct), signal }
+ * @param {Object} opts { onProgress(pct), onEngineLoad, signal }
  * @returns {Promise<Blob>}
  */
 export async function transcodeFile(file, { onProgress, onEngineLoad, signal } = {}) {
@@ -75,7 +60,7 @@ export async function transcodeFile(file, { onProgress, onEngineLoad, signal } =
   const outName = 'out.mp4'
 
   lastDuration = 0
-  ff.setLogger(({ message }) => {
+  ff.on('log', ({ message }) => {
     if (!message) return
     const d = message.match(/Duration:\s*(\d+:\d+:\d+(?:\.\d+)?)/)
     if (d) lastDuration = parseTimeToSeconds(d[1]) || 0
@@ -87,7 +72,7 @@ export async function transcodeFile(file, { onProgress, onEngineLoad, signal } =
     }
   })
 
-  ff.FS('writeFile', inName, new Uint8Array(await file.arrayBuffer()))
+  await ff.writeFile(inName, new Uint8Array(await file.arrayBuffer()))
 
   const args = [
     '-i', inName,
@@ -105,18 +90,17 @@ export async function transcodeFile(file, { onProgress, onEngineLoad, signal } =
   ]
 
   try {
-    await ff.run(...args)
-    const data = ff.FS('readFile', outName)
-    const view = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
-    const blob = new Blob([view], { type: 'video/mp4' })
+    await ff.exec(args)
+    const data = await ff.readFile(outName, 'binary')
+    const blob = new Blob([data], { type: 'video/mp4' })
     if (transcodeCache.size >= TRANSCODE_CACHE_MAX) {
       transcodeCache.delete(transcodeCache.keys().next().value)
     }
     transcodeCache.set(key, blob)
     return blob
   } finally {
-    try { ff.FS('unlink', inName) } catch {}
-    try { ff.FS('unlink', outName) } catch {}
+    try { await ff.deleteFile(inName) } catch {}
+    try { await ff.deleteFile(outName) } catch {}
   }
 }
 
