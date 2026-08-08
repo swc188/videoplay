@@ -7,22 +7,22 @@ import { extname } from '../utils.js'
 export function getBrowserType() {
   if (typeof navigator === 'undefined') return 'other'
   const ua = navigator.userAgent.toLowerCase()
-  
+
   // Edge (Chromium-based) - UA 包含 "edg/"
   if (ua.includes('edg/')) return 'edge'
-  
+
   // 360 浏览器 - UA 包含 "360" 和 "chrome"
   if (ua.includes('360') && ua.includes('chrome')) return '360'
-  
+
   // Chrome - UA 包含 "chrome" 但不包含特殊标记
   if (ua.includes('chrome') && !ua.includes('chromium') && !ua.includes('qqbrowser') && !ua.includes('baidu')) return 'chrome'
-  
+
   // QQ 浏览器
   if (ua.includes('qqbrowser')) return 'qq'
-  
+
   // 百度浏览器
   if (ua.includes('baidu')) return 'baidu'
-  
+
   return 'other'
 }
 
@@ -32,7 +32,12 @@ export function getBrowserType() {
  */
 export function isModernBrowser() {
   const browser = getBrowserType()
-  return browser === 'chrome' || browser === 'edge' || browser === '360'
+  const isModern = browser === 'chrome' || browser === 'edge' || browser === '360'
+  // 调试输出
+  if (typeof console !== 'undefined') {
+    console.log('[Browser Detection] type:', browser, 'modern:', isModern, 'ua:', navigator?.userAgent?.substring(0, 50))
+  }
+  return isModern
 }
 
 /**
