@@ -33,6 +33,18 @@ Entries discovered by the Agent while performing [specific task description] sho
 
 [Project Knowledge Summary]
 - Date: 2026-08-08
+- Context: Discovered by Agent while fixing browser detection and video playback issues
+- Category: Troubleshooting & Debugging
+- Instructions:
+  - Edge UA contains "Edg/" not "EdgE", regex /Edg[e]/i fails to match
+  - Use ua.includes('edg/') string check instead of regex
+  - All video formats should be allowed for selection (isSupportedLocalFile returns true)
+  - FLV/TS are handled by mpegts.js/flv.js libraries, not transcoding
+  - Modern browsers (Chrome/Edge/360) play all formats natively
+  - QQ/Baidu browsers use ffmpeg transcoding for non-native formats
+
+[Project Knowledge Summary]
+- Date: 2026-08-08
 - Context: Discovered by Agent while fixing Edge transcoder "bad memory" error, Chrome file input unresponsiveness, and ffmpeg "can only run one command at a time" error; upgraded to @ffmpeg 0.12.x single-threaded version
 - Category: Troubleshooting & Debugging
 - Instructions:
