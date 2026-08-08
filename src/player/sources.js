@@ -66,6 +66,7 @@ export function isSupportedExtName(name = '') {
 /**
  * 本地文件是否可被播放器处理（点击即可播放）。
  * 包含全部支持格式，但排除仅限网络流的 m3u8 / mpd。
+ * QQ/百度浏览器虽然不走现代浏览器路径，但仍应允许选择文件进行转码。
  */
 export function isSupportedLocalFile(file) {
   if (!file || !file.name) return false
@@ -76,12 +77,11 @@ export function isSupportedLocalFile(file) {
   // 检查 MIME 类型
   const type = file.type || ''
   if (type.startsWith('video/') || type.startsWith('audio/')) return true
-  // 检查扩展名
+  // 检查扩展名 - 所有视频格式都允许（现代浏览器原生播放，旧浏览器转码）
   if (NATIVE_EXTS.has(e)) return true
   if (FLV_EXTS.has(e) || TS_EXTS.has(e)) return true
   if (TRANSCODE_EXTS.has(e)) return true
-  // 现代浏览器支持更多格式
-  if (isModernBrowser() && MODERN_BROWSER_NATIVE_EXTS.has(e)) return true
+  if (MODERN_BROWSER_NATIVE_EXTS.has(e)) return true
   return false
 }
 
