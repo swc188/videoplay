@@ -12,6 +12,7 @@ export class Player {
     this.engineDestroy = null
     this.objectUrl = null
     this.current = null
+    this.enginePromise = null
     this._bind()
   }
 
@@ -31,9 +32,6 @@ export class Player {
       v.addEventListener(ev, (e) => this.events[key]?.(e))
     }
     v.addEventListener('error', (e) => {
-      if (this.current && this.enginePromise) {
-        // 引擎加载失败 vs 解码失败：交给 UI 层处理
-      }
       this.events.onError?.(e)
     })
   }
@@ -54,8 +52,7 @@ export class Player {
       if (this.objectUrl) URL.revokeObjectURL(this.objectUrl)
       this.objectUrl = URL.createObjectURL(source.file)
       url = this.objectUrl
-      const det = detectKind({ mime: source.file.type, name: source.file.name })
-      kind = det.kind
+      kind = detectKind({ mime: source.file.type, name: source.file.name }).kind
     } else {
       if (!kind) {
         kind = detectKind({ url, mime: source.mime, name: source.name || url }).kind

@@ -61,7 +61,7 @@ export const mediaLoaderMethods = {
     this.transcodeAbort = ctrl
     this.tpFill.style.width = '0%'
     this.tp.querySelector('.tp-pct').textContent = '0%'
-    this.tp.querySelector('.tp-meta').textContent = '正在加载解码引擎（首次约 24MB）…'
+    this.tp.querySelector('.tp-meta').textContent = '正在加载解码引擎（首次约 24MB）...'
     this.tp.classList.add('show')
 
     const started = Date.now()
@@ -69,7 +69,7 @@ export const mediaLoaderMethods = {
       onEngineLoad: () => {
         if (ctrl.signal.aborted) return
         this.tp.querySelector('.tp-pct').textContent = '1%'
-        this.tp.querySelector('.tp-meta').textContent = '解码引擎已就绪，开始转码…'
+        this.tp.querySelector('.tp-meta').textContent = '解码引擎已就绪，开始转码...'
       },
       onProgress: ({ pct, eta }) => {
         if (ctrl.signal.aborted) return

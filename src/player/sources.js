@@ -1,131 +1,131 @@
 import { extname } from '../utils.js'
 
-// 浏览器 video 原生支持的容器
-const NATIVE_EXTS = new Set([
-  'mp4', 'm4v', 'm4a', 'mov', 'webm', 'ogv', 'ogg', 'oga', 'ogm',
-  'mp3', 'wav', 'aac', 'flac', 'm4b', 'opus',
-])
-
-// 需要流式引擎（MSE）的格式
-const HLS_EXTS = new Set(['m3u8'])
-const DASH_EXTS = new Set(['mpd'])
-const FLV_EXTS = new Set(['flv'])
-const TS_EXTS = new Set(['ts', 'mts', 'm2ts'])
-
-// 需要 ffmpeg.wasm 转码的格式（仅兼容浏览器不支持的格式）
-const TRANSCODE_EXTS = new Set([
-  'rm', 'rmvb', '3gp', 'vob', 'divx', 'xvid', 'dat', 'mxf', 'nsv',
-])
-
-// 现代浏览器（Chrome/Edge/360）原生支持的格式，可直接播放
-const MODERN_BROWSER_NATIVE_EXTS = new Set([
-  'mkv', 'avi', 'wmv', 'asf', 'mpg', 'mpeg',
-])
-
-const HLS_MIMES = [
-  'application/vnd.apple.mpegurl', 'application/x-mpegurl',
-  'application/mpegurl', 'audio/mpegurl', 'application/vnd.apple.mpegurl; charset=utf-8',
-]
-const DASH_MIMES = ['application/dash+xml']
-const FLV_MIMES = ['video/x-flv', 'flv-application/octet-stream']
-const TS_MIMES = ['video/mp2t', 'video/mpeg', 'video/mp2p']
+/**
+ * 检测浏览器类型
+ * @returns {'chrome'|'edge'|'360'|'qq'|'baidu'|'other'}
+ */
+export function getBrowserType() {
+  if (typeof navigator === 'undefined') return 'other'
+  const ua = navigator.userAgent.toLowerCase()
+  
+  // Edge (Chromium-based) - UA 包含 "edg/"
+  if (ua.includes('edg/')) return 'edge'
+  
+  // 360 浏览器 - UA 包含 "360" 和 "chrome"
+  if (ua.includes('360') && ua.includes('chrome')) return '360'
+  
+  // Chrome - UA 包含 "chrome" 但不包含特殊标记
+  if (ua.includes('chrome') && !ua.includes('chromium') && !ua.includes('qqbrowser') && !ua.includes('baidu')) return 'chrome'
+  
+  // QQ 浏览器
+  if (ua.includes('qqbrowser')) return 'qq'
+  
+  // 百度浏览器
+  if (ua.includes('baidu')) return 'baidu'
+  
+  return 'other'
+}
 
 /**
- * 检测是否为现代浏览器（Chrome/Edge/360）
+ * 是否为现代浏览器（Chrome/Edge/360）
  * 这些浏览器原生支持 MKV/AVI/WMV 等格式
- * QQ浏览器/百度浏览器虽然基于Chromium但解码能力有限，不走现代浏览器路径
  */
 export function isModernBrowser() {
-  if (typeof navigator === 'undefined') return false
-  const ua = navigator.userAgent
-  // Edge (Chromium-based) - 必须在 Chrome 之前检测
-  // Edge UA 格式: "Edg/" 或 "Edge/"
-  if (/Edg[/e]/i.test(ua) || /Edge\//i.test(ua)) return true
-  // 360 浏览器 - 必须包含 Chrome
-  if (/360/.test(ua) && /Chrome/.test(ua)) return true
-  // Chrome (排除 Chromium、QQ、百度、Edge 等修改版)
-  if (/Chrome/.test(ua) && !/Chromium/.test(ua) && !/QQBrowser/.test(ua) && !/Baidu/.test(ua) && !/Edge/.test(ua) && !/Edg/.test(ua)) return true
-  return false
-}
-
-export function isNativeMime(mime = '') {
-  if (!mime) return false
-  return mime.startsWith('video/') || mime.startsWith('audio/')
+  const browser = getBrowserType()
+  return browser === 'chrome' || browser === 'edge' || browser === '360'
 }
 
 /**
- * 扩展名是否在播放器可处理范围内
+ * 浏览器是否原生支持指定格式
+ * @param {string} ext - 文件扩展名（不含点号）
+ * @returns {boolean}
  */
-export function isSupportedExtName(name = '') {
-  const e = extname(name)
-  if (!e) return false
-  return NATIVE_EXTS.has(e) || HLS_EXTS.has(e) || DASH_EXTS.has(e) ||
-    FLV_EXTS.has(e) || TS_EXTS.has(e) || TRANSCODE_EXTS.has(e) ||
-    (isModernBrowser() && MODERN_BROWSER_NATIVE_EXTS.has(e))
+export function isNativeSupported(ext) {
+  if (!ext) return false
+  
+  // 所有浏览器都支持的基础格式
+  const universalNativeExts = new Set([
+    'mp4', 'm4v', 'm4a', 'mov', 'webm', 'ogv', 'ogg', 'mp3', 'wav', 'aac', 'flac'
+  ])
+  
+  // 现代浏览器额外支持的格式
+  const modernNativeExts = new Set([
+    'mkv', 'avi', 'wmv', 'asf', 'mpg', 'mpeg', 'flv', 'ts', 'mts', 'm2ts'
+  ])
+  
+  if (universalNativeExts.has(ext)) return true
+  if (isModernBrowser() && modernNativeExts.has(ext)) return true
+  return false
 }
 
 /**
- * 本地文件是否可被播放器处理（点击即可播放）。
- * 包含全部支持格式，但排除仅限网络流的 m3u8 / mpd。
- * QQ/百度浏览器虽然不走现代浏览器路径，但仍应允许选择文件进行转码。
+ * 判断资源需要转码
+ * @param {string} ext - 文件扩展名（不含点号）
+ * @returns {boolean}
  */
-export function isSupportedLocalFile(file) {
-  if (!file || !file.name) return false
-  const e = extname(file.name)
-  if (!e) return false
-  // 排除仅限网络流的格式
-  if (HLS_EXTS.has(e) || DASH_EXTS.has(e)) return false
-  // 检查 MIME 类型
-  const type = file.type || ''
-  if (type.startsWith('video/') || type.startsWith('audio/')) return true
-  // 检查扩展名 - 所有视频格式都允许（现代浏览器原生播放，旧浏览器转码）
-  if (NATIVE_EXTS.has(e)) return true
-  if (FLV_EXTS.has(e) || TS_EXTS.has(e)) return true
-  if (TRANSCODE_EXTS.has(e)) return true
-  if (MODERN_BROWSER_NATIVE_EXTS.has(e)) return true
-  return false
+export function needTranscode(ext) {
+  if (!ext) return true
+  return !isNativeSupported(ext)
 }
 
 /**
  * 判定资源类型
- * @returns {{kind:'native'|'hls'|'dash'|'flv'|'ts'|'transcode'|'unknown', ext:string}}
+ * @param {Object} options
+ * @param {string} options.url - 资源 URL
+ * @param {string} options.mime - MIME 类型
+ * @param {string} options.name - 文件名
+ * @returns {{kind:'native'|'transcode'|'hls'|'dash'|'flv'|'ts', ext:string}}
  */
-export function detectKind({ url, mime, name }) {
+export function detectKind({ url = '', mime = '', name = '' }) {
   const ext = extname(name || url)
-  const m = (mime || '').toLowerCase()
-  const modern = isModernBrowser()
-
-  // 流式格式
-  if (ext && HLS_EXTS.has(ext) || HLS_MIMES.includes(m)) return { kind: 'hls', ext }
-  if (ext && DASH_EXTS.has(ext) || DASH_MIMES.includes(m)) return { kind: 'dash', ext }
-  if (ext && FLV_EXTS.has(ext) || FLV_MIMES.includes(m)) return { kind: 'flv', ext }
-  if (ext && TS_EXTS.has(ext) || TS_MIMES.includes(m)) return { kind: 'ts', ext }
-
-  // 现代浏览器：原生支持 MP4/WebM + MKV/AVI/WMV
-  if (modern && (NATIVE_EXTS.has(ext) || MODERN_BROWSER_NATIVE_EXTS.has(ext))) {
+  const m = mime.toLowerCase()
+  
+  // 流式格式检测
+  if (ext === 'm3u8' || m === 'application/vnd.apple.mpegurl') return { kind: 'hls', ext }
+  if (ext === 'mpd' || m === 'application/dash+xml') return { kind: 'dash', ext }
+  if (ext === 'flv' || m === 'video/x-flv') return { kind: 'flv', ext }
+  if (ext === 'ts' || m === 'video/mp2t') return { kind: 'ts', ext }
+  
+  // 判断是否原生支持
+  if (isNativeSupported(ext)) {
     return { kind: 'native', ext }
   }
-
-  // 旧浏览器：仅原生支持 MP4/WebM
-  if (ext && NATIVE_EXTS.has(ext)) return { kind: 'native', ext }
-
-  // 需要转码的格式
-  if (ext && TRANSCODE_EXTS.has(ext)) return { kind: 'transcode', ext }
-  if (ext && MODERN_BROWSER_NATIVE_EXTS.has(ext)) return { kind: 'transcode', ext }
-
-  // 基于 MIME 类型判断
-  if (isNativeMime(m)) return { kind: 'native', ext }
-
-  // 无扩展名/未知：先尝试原生播放
-  if (!ext) return { kind: 'unknown', ext }
-
+  
+  // 需要转码
   return { kind: 'transcode', ext }
 }
 
-export const needTranscode = (kind) => kind === 'transcode'
+/**
+ * 检查本地文件是否可被播放器处理
+ * @param {File} file - 文件对象
+ * @returns {boolean}
+ */
+export function isSupportedLocalFile(file) {
+  if (!file || !file.name) return false
+  
+  const ext = extname(file.name)
+  if (!ext) return false
+  
+  // 排除仅限网络流的格式
+  if (ext === 'm3u8' || ext === 'mpd') return false
+  
+  // 检查 MIME 类型
+  const type = (file.type || '').toLowerCase()
+  if (type.startsWith('video/') || type.startsWith('audio/')) return true
+  
+  // 检查扩展名
+  if (isNativeSupported(ext)) return true
+  
+  // 不支持的格式也允许选择（会触发转码）
+  return false
+}
 
 /**
  * 挂载对应播放引擎
+ * @param {HTMLVideoElement} video
+ * @param {Object} options
+ * @param {string} options.kind - 播放类型
+ * @param {string} options.url - 资源 URL
  * @returns {Promise<{engine:any, destroy:()=>void}>}
  */
 export function attachEngine(video, { kind, url }) {
@@ -195,7 +195,7 @@ export function attachEngine(video, { kind, url }) {
         done({ engine: player, destroy: () => { try { player.destroy() } catch {} } })
       }).catch(() => fail(new Error('FLV/TS 引擎加载失败')))
     } else {
-      // native / unknown：直接交给 video
+      // native：直接交给 video 元素
       video.src = url
       done({ engine: null, destroy: () => { video.removeAttribute('src'); video.load() } })
     }
