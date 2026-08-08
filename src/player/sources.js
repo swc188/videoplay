@@ -36,13 +36,14 @@ const TS_MIMES = ['video/mp2t', 'video/mpeg', 'video/mp2p']
  * QQ浏览器/百度浏览器虽然基于Chromium但解码能力有限，不走现代浏览器路径
  */
 export function isModernBrowser() {
+  if (typeof navigator === 'undefined') return false
   const ua = navigator.userAgent
-  // Edge (Chromium-based)
+  // Edge (Chromium-based) - 必须在 Chrome 之前检测
   if (/Edg[e]/i.test(ua)) return true
-  // 360 浏览器
+  // 360 浏览器 - 必须包含 Chrome
   if (/360/.test(ua) && /Chrome/.test(ua)) return true
   // Chrome (排除 Chromium、QQ、百度等修改版)
-  if (/Chrome/.test(ua) && !/Chromium/.test(ua) && !/QQBrowser/.test(ua) && !/Baidu/.test(ua)) return true
+  if (/Chrome/.test(ua) && !/Chromium/.test(ua) && !/QQBrowser/.test(ua) && !/Baidu/.test(ua) && !/Edge/.test(ua)) return true
   return false
 }
 
@@ -67,11 +68,21 @@ export function isSupportedExtName(name = '') {
  * 包含全部支持格式，但排除仅限网络流的 m3u8 / mpd。
  */
 export function isSupportedLocalFile(file) {
-  if (!file) return false
+  if (!file || !file.name) return false
   const e = extname(file.name)
+  if (!e) return false
+  // 排除仅限网络流的格式
   if (HLS_EXTS.has(e) || DASH_EXTS.has(e)) return false
+  // 检查 MIME 类型
   const type = file.type || ''
-  return type.startsWith('video/') || type.startsWith('audio/') || isSupportedExtName(file.name)
+  if (type.startsWith('video/') || type.startsWith('audio/')) return true
+  // 检查扩展名
+  if (NATIVE_EXTS.has(e)) return true
+  if (FLV_EXTS.has(e) || TS_EXTS.has(e)) return true
+  if (TRANSCODE_EXTS.has(e)) return true
+  // 现代浏览器支持更多格式
+  if (isModernBrowser() && MODERN_BROWSER_NATIVE_EXTS.has(e)) return true
+  return false
 }
 
 /**
@@ -83,23 +94,30 @@ export function detectKind({ url, mime, name }) {
   const m = (mime || '').toLowerCase()
   const modern = isModernBrowser()
 
+  // 流式格式
   if (ext && HLS_EXTS.has(ext) || HLS_MIMES.includes(m)) return { kind: 'hls', ext }
   if (ext && DASH_EXTS.has(ext) || DASH_MIMES.includes(m)) return { kind: 'dash', ext }
   if (ext && FLV_EXTS.has(ext) || FLV_MIMES.includes(m)) return { kind: 'flv', ext }
   if (ext && TS_EXTS.has(ext) || TS_MIMES.includes(m)) return { kind: 'ts', ext }
 
-  // 现代浏览器直接原生播放
+  // 现代浏览器：原生支持 MP4/WebM + MKV/AVI/WMV
   if (modern && (NATIVE_EXTS.has(ext) || MODERN_BROWSER_NATIVE_EXTS.has(ext))) {
     return { kind: 'native', ext }
   }
 
-  // 旧格式需要转码
-  if (ext && TRANSCODE_EXTS.has(ext)) return { kind: 'transcode', ext }
-
+  // 旧浏览器：仅原生支持 MP4/WebM
   if (ext && NATIVE_EXTS.has(ext)) return { kind: 'native', ext }
+
+  // 需要转码的格式
+  if (ext && TRANSCODE_EXTS.has(ext)) return { kind: 'transcode', ext }
+  if (ext && MODERN_BROWSER_NATIVE_EXTS.has(ext)) return { kind: 'transcode', ext }
+
+  // 基于 MIME 类型判断
   if (isNativeMime(m)) return { kind: 'native', ext }
-  // 无扩展名/未知：先尝试原生播放，失败再走转码
+
+  // 无扩展名/未知：先尝试原生播放
   if (!ext) return { kind: 'unknown', ext }
+
   return { kind: 'transcode', ext }
 }
 
