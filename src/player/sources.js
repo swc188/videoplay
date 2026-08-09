@@ -24,16 +24,6 @@ export function isModernBrowser() {
   return { type, modern }
 }
 
-/**
- * 判定是否为现代浏览器（原生支持 MKV/AVI/TS 等扩展格式）
- * @returns {{type:string, modern:boolean}}
- */
-export function isModernBrowser() {
-  const type = getBrowserType()
-  const modern = type === 'chrome' || type === '360'
-  return { type, modern }
-}
-
 const UNIVERSAL_NATIVE_EXTS = new Set([
   'mp4', 'm4v', 'm4a', 'mov', 'webm', 'ogv', 'ogg', 'mp3', 'wav', 'aac', 'flac',
 ])
