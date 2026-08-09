@@ -135,9 +135,11 @@ export class PlayerUI {
       if (this.transcodeAbort) { this.transcodeAbort.abort(); toast('已取消转码') }
     })
 
-    // 移动端抽屉遮罩点击关闭
-    this.plOverlay.addEventListener('click', () => {
-      if (this.plPanel.classList.contains('open')) {
+    // 移动端抽屉点击外部关闭
+    this.playerEl.addEventListener('click', (e) => {
+      if (!this.plPanel.classList.contains('open')) return
+      const plRect = this.plPanel.getBoundingClientRect()
+      if (e.clientX < plRect.left) {
         this.plPanel.classList.remove('open')
         this._updatePlOverlay()
         this._updateTopBarVisibility()

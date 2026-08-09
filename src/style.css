@@ -66,6 +66,7 @@ svg { display: block; }
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   container-type: size;
+  z-index: 1;
 }
 
 .player.skinny {
@@ -441,7 +442,7 @@ input[type="range"]::-moz-range-thumb {
   display: none;
   pointer-events: none;
 }
-.pl-overlay.show { display: block; pointer-events: auto; }
+.pl-overlay.show { display: block; }
 
 .playlist-panel {
   width: 0;
@@ -459,7 +460,11 @@ input[type="range"]::-moz-range-thumb {
   max-height: 100%;
   z-index: 35;
 }
-.playlist-panel.open { width: 320px; opacity: 1; pointer-events: auto; }
+.playlist-panel.open { width: 320px; opacity: 1; }
+.playlist-panel.open .pl-item,
+.playlist-panel.open .playlist-header,
+.playlist-panel.open .playlist-actions .playlist-clear,
+.playlist-panel.open .btn-pl-close { pointer-events: auto; }
 
 .playlist-header {
   display: flex;
