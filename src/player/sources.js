@@ -9,12 +9,19 @@ import { extname } from '../utils.js'
 export function getBrowserType() {
   if (typeof navigator === 'undefined') return 'other'
   const ua = navigator.userAgent.toLowerCase()
-  // Edge 和 Chrome 同为 Chromium 内核，播放能力一致，统一归为 'chrome' 类型
-  if (ua.includes('edg/') || (ua.includes('chrome') && !ua.includes('chromium'))) return 'chrome'
+  // Edge / Chrome / 360 各自独立类型，但均为现代浏览器，播放逻辑完全一致
+  if (ua.includes('edg/')) return 'edge'
   if (ua.includes('360') && ua.includes('chrome')) return '360'
   if (ua.includes('qqbrowser')) return 'qq'
   if (ua.includes('baidu')) return 'baidu'
+  if (ua.includes('chrome') && !ua.includes('chromium')) return 'chrome'
   return 'other'
+}
+
+export function isModernBrowser() {
+  const type = getBrowserType()
+  const modern = type === 'chrome' || type === 'edge' || type === '360'
+  return { type, modern }
 }
 
 /**
