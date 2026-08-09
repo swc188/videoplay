@@ -1,4 +1,4 @@
-import { isSupportedLocalFile } from '../player/sources.js'
+import { isSupportedLocalFile, isMobileDevice } from '../player/sources.js'
 import { loadDirHandle, saveDirHandle, scanDirectory } from '../player/localVideos.js'
 import { toast } from '../utils.js'
 
@@ -16,10 +16,18 @@ function isLegacyChinaBrowser() {
 /**
  * 检测浏览器是否支持目录选择（showDirectoryPicker 或 webkitdirectory）
  * QQ浏览器/百度浏览器等国产浏览器通常不支持
+ * Android Chrome 不支持 showDirectoryPicker，但支持 webkitdirectory
  */
 function supportsDirectoryPicker() {
   if (isLegacyChinaBrowser()) return false
   if (typeof window.showDirectoryPicker === 'function') return true
+  // Android Chrome 不支持 showDirectoryPicker，但支持 webkitdirectory
+  if (isMobileDevice()) {
+    const testInput = document.createElement('input')
+    testInput.type = 'file'
+    testInput.setAttribute('webkitdirectory', '')
+    return !!testInput.webkitdirectory
+  }
   // 检测 webkitdirectory 支持（Chrome/Edge 桌面 + Chrome Android 108+）
   const testInput = document.createElement('input')
   testInput.type = 'file'
@@ -44,7 +52,8 @@ export const localLibraryMethods = {
       this.fileInput.click()
       return
     }
-    if (!window.showDirectoryPicker) { this.folderInput.click(); return }
+    // Android Chrome 不支持 showDirectoryPicker，直接使用 webkitdirectory
+    if (isMobileDevice() || !window.showDirectoryPicker) { this.folderInput.click(); return }
     let handle
     try {
       handle = await window.showDirectoryPicker({ mode: 'read' })
