@@ -98,7 +98,12 @@ export const playerEventsMethods = {
         } else if (code === 3 || code === 4) {
           // 解码失败 / 格式不受支持（如 HEVC 编码的 MP4，Edge/Chrome 无内置解码器）：
           // 自动回退 ffmpeg.wasm 转码播放
-          this._fallbackTranscode()
+          if (this.player.current?.fromTranscode) {
+            toast('视频格式不受支持，转码后仍无法播放', 'error')
+            this._restoreEmpty()
+          } else {
+            this._fallbackTranscode()
+          }
         }
       },
     }

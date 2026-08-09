@@ -104,7 +104,9 @@ export const mediaLoaderMethods = {
   // Edge/Chrome 原生解码失败（HEVC 等无内置解码器）时回退转码播放
   async _fallbackTranscode() {
     if (this.player.current?.fromTranscode) {
-      this._handleError(new Error('该格式不受支持，转码后仍无法播放'))
+      // 转码后仍失败，给出明确提示
+      toast('该格式在浏览器中无法播放，建议使用 MP4 (H.264) 或 WebM 格式', 'error')
+      this._restoreEmpty()
       return
     }
     if (this.transcodeAbort) return
