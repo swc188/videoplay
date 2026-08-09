@@ -7,6 +7,19 @@ export default defineConfig({
     // 若被预打包成单文件会导致 worker 404、ffmpeg 加载挂起，故排除
     exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/core'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          hls: ['hls.js'],
+          dash: ['dashjs'],
+          mpegts: ['mpegts.js'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 6000,
+    target: 'es2018',
+  },
   server: {
     host: true,
     port: 5173,
@@ -16,9 +29,5 @@ export default defineConfig({
     host: true,
     port: 4173,
     allowedHosts: ['.monkeycode-ai.online'],
-  },
-  build: {
-    chunkSizeWarningLimit: 6000,
-    target: 'es2018',
   },
 })
