@@ -60,16 +60,17 @@ export async function saveDirHandle(handle) {
 /**
  * 递归扫描目录，收集支持的全部媒体文件。
  * 跳过 Android 系统目录，单条目失败不中断，用 yield 让出主线程防止卡死。
+ * 优化：增加批次大小，减少主线程阻塞时间
  */
 export async function scanDirectory(dirHandle, out = [], stats) {
   const s = stats || { scanned: 0, skipped: 0, errors: 0 }
   let seen = 0
+  const YIELD_INTERVAL = 128 // 每 128 个条目让出主线程（原 32）
+  const BATCH_SIZE = 64 // 每批处理 64 个条目
+  
   await new Promise((r) => setTimeout(r, 0))
   try {
     for await (const entry of dirHandle.values()) {
-      // 每 32 个条目让出主线程：for await + getFile 会产生微任务风暴，
-      // 大目录下会阻塞 rAF 几十秒，表现为页面卡死无响应
-      if ((seen++ & 31) === 0) await new Promise((r) => setTimeout(r, 0))
       try {
         if (entry.kind === 'directory') {
           if (/^Android(\/|$)/.test(entry.name)) continue
@@ -84,6 +85,11 @@ export async function scanDirectory(dirHandle, out = [], stats) {
         }
       } catch {
         s.errors++
+      }
+      
+      // 每处理 YIELD_INTERVAL 个条目让出主线程
+      if ((seen++ & (YIELD_INTERVAL - 1)) === YIELD_INTERVAL - 1) {
+        await new Promise((r) => setTimeout(r, 0))
       }
     }
   } catch {
