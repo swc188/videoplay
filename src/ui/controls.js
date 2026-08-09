@@ -330,23 +330,19 @@ export class PlayerUI {
       ]))
       return
     }
-    const CHUNK = 200
+    const CHUNK = 500 // 每帧渲染 500 条（原 200）
     const build = (start, end) => {
+      // 使用 DocumentFragment 批量插入，减少重排次数
+      const fragment = document.createDocumentFragment()
       for (let idx = start; idx < end && idx < items.length; idx++) {
         const item = items[idx]
-        const row = el('div', { class: 'pl-item' + (item.id === this.currentItem?.id ? ' active' : '') }, [
-          el('span', { class: 'pl-index' }, String(idx + 1)),
-          el('span', { class: 'pl-title' }, item.title),
-          el('span', { class: 'pl-type' }, item.kind || (item.source.type === 'file' ? 'file' : 'net')),
-          el('button', { class: 'pl-del', type: 'button', title: '移除' }, [icon('trash', 14)]),
-        ])
-        row.addEventListener('click', (e) => {
-          if (e.target.closest('.pl-del')) { this.playlist.remove(item.id); return }
-          if (item.id !== this.currentItem?.id) this.playItem(item.id)
-          this.plList.focus({ preventScroll: true })
-        })
-        this.plList.append(row)
+        const row = document.createElement('div')
+        row.className = 'pl-item' + (item.id === this.currentItem?.id ? ' active' : '')
+        row.innerHTML = `<span class="pl-index">${idx + 1}</span><span class="pl-title">${item.title}</span><span class="pl-type">${item.kind || (item.source.type === 'file' ? 'file' : 'net')}</span><button class="pl-del" type="button" title="移除">✕</button>`
+        row.dataset.id = item.id
+        fragment.append(row)
       }
+      this.plList.append(fragment)
     }
     let i = 0
     const next = () => {
@@ -357,6 +353,23 @@ export class PlayerUI {
     }
     build(0, CHUNK)
     if (items.length > CHUNK) requestAnimationFrame(next)
+
+    // 事件委托：统一处理点击，避免逐个绑定
+    this.plList.onclick = (e) => {
+      if (token !== this._plRenderToken) return
+      const delBtn = e.target.closest('.pl-del')
+      const row = e.target.closest('.pl-item')
+      if (delBtn && row) {
+        this.playlist.remove(row.dataset.id)
+        return
+      }
+      if (row) {
+        const id = row.dataset.id
+        const item = items.find(i => i.id === id)
+        if (item && item.id !== this.currentItem?.id) this.playItem(id)
+        this.plList.focus({ preventScroll: true })
+      }
+    }
   }
 
 
