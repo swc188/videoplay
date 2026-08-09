@@ -145,6 +145,8 @@ export class PlayerUI {
     // 移动端抽屉点击外部关闭
     this.playerEl.addEventListener('click', (e) => {
       if (!this.plPanel.classList.contains('open')) return
+      // 只作用于移动端：点击目标不是按钮、控制栏、面板本身
+      if (e.target.closest('.icon-btn') || e.target.closest('.control-bar') || e.target.closest('.playlist-panel')) return
       const plRect = this.plPanel.getBoundingClientRect()
       if (e.clientX < plRect.left) {
         this.plPanel.classList.remove('open')
