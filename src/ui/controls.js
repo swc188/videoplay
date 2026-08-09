@@ -117,7 +117,14 @@ export class PlayerUI {
 
     // 全屏状态
     document.addEventListener('fullscreenchange', () => {
-      const fs = !!document.fullscreenElement
+      const fs = !!FS.element
+      this.playerEl.classList.toggle('fullscreen-mode', fs)
+      this.btnFs.innerHTML = ''
+      this.btnFs.append(icon(fs ? 'fullscreenExit' : 'fullscreen', 19))
+    })
+    // 兼容旧版 Safari/Chrome 的全屏事件名
+    document.addEventListener('webkitfullscreenchange', () => {
+      const fs = !!FS.element
       this.playerEl.classList.toggle('fullscreen-mode', fs)
       this.btnFs.innerHTML = ''
       this.btnFs.append(icon(fs ? 'fullscreenExit' : 'fullscreen', 19))
@@ -233,7 +240,10 @@ export class PlayerUI {
       case 'rewind': this.player.seekBy(-10); this._pokeUI(); break
       case 'forward': this.player.seekBy(10); this._pokeUI(); break
       case 'mute': this.player.setVolume(this.player.volume, !this.player.muted); break
-      case 'pip': this.player.requestPiP().catch(() => toast('当前环境不支持画中画', 'error')); break
+      case 'pip':
+        if (!PiP.request) return toast('当前环境不支持画中画', 'error')
+        PiP.request(this.player.video).catch(() => toast('当前环境不支持画中画', 'error'))
+        break
       case 'capture': this.capture(); break
       case 'loop': this.toggleLoop(); break
       case 'fullscreen': this.toggleFullscreen(); break
@@ -264,10 +274,10 @@ export class PlayerUI {
   }
 
   async toggleFullscreen() {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen().catch(() => {})
+    if (FS.element) {
+      await FS.exit?.()?.catch(() => {})
     } else {
-      await this.playerEl.requestFullscreen().catch(() => toast('当前环境不支持全屏', 'error'))
+      await FS.request(this.playerEl)?.catch(() => toast('当前环境不支持全屏', 'error'))
     }
   }
 

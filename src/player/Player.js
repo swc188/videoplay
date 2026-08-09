@@ -1,5 +1,37 @@
 import { attachEngine, detectKind, needTranscode } from './sources.js'
 
+// 全屏 API 兼容层：统一处理标准 API 与各浏览器私有前缀
+const FS = {
+  request: (el) => el.requestFullscreen?.()
+    || el.webkitRequestFullscreen?.()
+    || el.mozRequestFullScreen?.()
+    || el.msRequestFullscreen?.(),
+  exit: () => document.exitFullscreen?.()
+    || document.webkitExitFullscreen?.()
+    || document.mozCancelFullScreen?.()
+    || document.msExitFullscreen?.(),
+  get element() {
+    return document.fullscreenElement
+      || document.webkitFullscreenElement
+      || document.mozFullScreenElement
+      || document.msFullscreenElement
+  },
+  get onchange() { return document.onfullscreenchange },
+  set onchange(v) { document.onfullscreenchange = v },
+}
+
+// 画中画 API 兼容层
+const PiP = {
+  request: (el) => el.requestPictureInPicture?.()
+    || el.webkitEnterPictureInPicture?.(),
+  exit: () => document.exitPictureInPicture?.()
+    || document.webkitExitPictureInPicture?.(),
+  get element() {
+    return document.pictureInPictureElement
+      || document.webkitPictureInPictureElement
+  },
+}
+
 export class Player {
   constructor(video, events = {}) {
     this.video = video
@@ -82,7 +114,23 @@ export class Player {
     }
   }
 
-  play() { return this.video.play().catch(() => {}) }
+  play() {
+    // iOS Safari 自动播放策略：需要先静音才能自动播放
+    if (this.video.paused && !this.video.muted) {
+      const wasMuted = this.video.muted
+      this.video.muted = true
+      return this.video.play()
+        .then(() => {
+          // 播放成功后恢复静音状态
+          if (!wasMuted) this.video.muted = false
+        })
+        .catch(() => {
+          // 失败时恢复原状态
+          this.video.muted = wasMuted
+        })
+    }
+    return this.video.play().catch(() => {})
+  }
   pause() { this.video.pause() }
   toggle() { return this.video.paused ? this.play() : this.pause() }
 
@@ -119,10 +167,10 @@ export class Player {
   }
 
   async requestPiP() {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture()
-    } else if (this.video.requestPictureInPicture) {
-      await this.video.requestPictureInPicture()
+    if (PiP.element) {
+      await PiP.exit?.()
+    } else if (PiP.request(this.video)) {
+      await PiP.request(this.video)
     }
   }
 

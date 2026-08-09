@@ -45,8 +45,8 @@ export const mediaLoaderMethods = {
         this.startTranscode(item.source.file)
         return
       }
-      // 自动开始播放
-      this.player.play()
+      // 自动开始播放（iOS Safari 需要用户交互，失败时静默处理）
+      this.player.play().catch(() => {})
     } catch (e) {
       this.spinner.classList.remove('show')
       this.playerEl.classList.remove('buffering')

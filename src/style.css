@@ -56,6 +56,9 @@ svg { display: block; }
   max-width: 1180px;
   max-height: 100%;
   aspect-ratio: 16 / 9;
+  /* fallback for Safari < 15 */
+  height: 0;
+  padding-bottom: 56.25%;
   min-height: 0;
   background: #000;
   border-radius: var(--radius);
@@ -66,6 +69,8 @@ svg { display: block; }
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   container-type: size;
+  /* fallback for Safari < 16 */
+  container-type: inline-size;
   z-index: 1;
 }
 
@@ -90,7 +95,13 @@ svg { display: block; }
   background: #000;
 }
 
-/* gradient overlays */
+/* 兼容旧版 Safari 的 container query */
+@supports not (container-type: size) {
+  .player {
+    height: auto;
+    padding-bottom: 56.25%;
+  }
+}
 .player .gradient {
   position: absolute;
   left: 0; right: 0;
