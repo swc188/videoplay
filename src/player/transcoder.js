@@ -1,5 +1,6 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { extname } from '../utils.js'
+import { isMobileDevice } from './sources.js'
 
 let ffmpeg = null
 let loadingPromise = null
@@ -7,6 +8,9 @@ let lastDuration = 0
 
 // 转码需把整个文件读入内存并复制进 wasm，超大文件会让标签页内存耗尽。
 export const MAX_TRANSCODE_SIZE = 400 * 1024 * 1024
+
+// 移动端内存限制（通常为 512MB-1GB，保守估计为桌面端的 1/4）
+export const MOBILE_MAX_TRANSCODE_SIZE = 100 * 1024 * 1024
 
 // 转码结果缓存：同一文件（文件名|大小）只转码一次
 const transcodeCache = new Map()
@@ -44,8 +48,10 @@ async function loadFFmpeg() {
  * @returns {Promise<Blob>}
  */
 export async function transcodeFile(file, { onProgress, onEngineLoad, signal } = {}) {
-  if (file.size > MAX_TRANSCODE_SIZE) {
-    throw new Error(`文件过大（${(file.size / 1048576).toFixed(0)}MB），超过 ${MAX_TRANSCODE_SIZE / 1048576}MB 上限，浏览器内存不足，无法转码`)
+  // 移动端内存限制
+  const maxSize = isMobileDevice() ? MOBILE_MAX_TRANSCODE_SIZE : MAX_TRANSCODE_SIZE
+  if (file.size > maxSize) {
+    throw new Error(`文件过大（${(file.size / 1048576).toFixed(0)}MB），${isMobileDevice() ? '移动端内存不足，无法转码' : '浏览器内存不足，无法转码'}`)
   }
   const key = transcodeKey(file)
   if (transcodeCache.has(key)) return transcodeCache.get(key)

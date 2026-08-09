@@ -10,7 +10,8 @@ export function getBrowserType() {
   if (typeof navigator === 'undefined') return 'other'
   const ua = navigator.userAgent.toLowerCase()
   // Edge / Chrome / 360 各自独立类型，但均为现代浏览器，播放逻辑完全一致
-  if (ua.includes('edg/')) return 'edge'
+  // Android Edge UA 包含 'EdgA'，iOS Edge UA 包含 'EdgiOS'
+  if (ua.includes('edg/') || ua.includes('edga') || ua.includes('edgios')) return 'edge'
   if (ua.includes('360') && ua.includes('chrome')) return '360'
   if (ua.includes('qqbrowser')) return 'qq'
   if (ua.includes('baidu')) return 'baidu'
@@ -22,6 +23,16 @@ export function isModernBrowser() {
   const type = getBrowserType()
   const modern = type === 'chrome' || type === 'edge' || type === '360'
   return { type, modern }
+}
+
+/**
+ * 检测是否为移动端设备
+ * @returns {boolean}
+ */
+export function isMobileDevice() {
+  if (typeof navigator === 'undefined') return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2)
 }
 
 const UNIVERSAL_NATIVE_EXTS = new Set([

@@ -1,4 +1,4 @@
-import { detectKind, isSupportedLocalFile } from '../player/sources.js'
+import { detectKind, isSupportedLocalFile, isMobileDevice } from '../player/sources.js'
 import { transcodeFile } from '../player/transcoder.js'
 import { baseName, extname, toast } from '../utils.js'
 
@@ -60,6 +60,12 @@ export const mediaLoaderMethods = {
 
   startTranscode(file) {
     if (this.transcodeAbort) return
+    // 移动端不支持 ffmpeg.wasm 转码
+    if (isMobileDevice()) {
+      toast('移动端暂不支持转码，请使用 MP4 (H.264) 或 WebM 格式的视频', 'error')
+      this._restoreEmpty()
+      return
+    }
     const ctrl = new AbortController()
     this.transcodeAbort = ctrl
     this.tpFill.style.width = '0%'
@@ -110,6 +116,12 @@ export const mediaLoaderMethods = {
       return
     }
     if (this.transcodeAbort) return
+    // 移动端不支持转码
+    if (isMobileDevice()) {
+      toast('移动端暂不支持转码，请使用 MP4 (H.264) 或 WebM 格式的视频', 'error')
+      this._restoreEmpty()
+      return
+    }
     const src = this.currentItem?.source
     if (!src) return
     this.spinner.classList.remove('show')
