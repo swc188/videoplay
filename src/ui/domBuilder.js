@@ -94,7 +94,7 @@ export const domBuilderMethods = {
 
     // 文件选择器 - 使用 clip 隐藏，兼容 Android Chrome
     this.fileInput = el('input', { type: 'file', accept: FILE_PICKER_ACCEPT, multiple: '', tabindex: '0', style: 'position:absolute;left:0;top:0;clip:rect(0,0,0,0);clip-path:inset(50%);height:1px;width:1px;overflow:hidden' })
-    this.folderInput = el('input', { type: 'file', webkitdirectory: '', multiple: '', tabindex: '0', style: 'position:absolute;left:0;top:0;clip:rect(0,0,0,0);clip-path:inset(50%);height:1px;width:1px;overflow:hidden' })
+    this.folderInput = el('input', { type: 'file', webkitdirectory: '', multiple: '', tabindex: '0', style: 'position:absolute;left:0;top:0;clip:rect(0,0,0,0);clip-path:inset(50%);height:1px;width:1px;overflow:hidden', id: 'folderInput' })
     this.subInput = el('input', { type: 'file', accept: '.srt,.vtt', tabindex: '0', style: 'position:absolute;left:0;top:0;clip:rect(0,0,0,0);clip-path:inset(50%);height:1px;width:1px;overflow:hidden' })
 
     // 移动端抽屉遮罩（放在末尾，确保 z-index 控制层级）

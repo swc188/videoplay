@@ -80,7 +80,7 @@ export const localLibraryMethods = {
     } else {
       list.forEach((f) => this.playlist.addFile(f))
     }
-    this.renderPlaylist()
+    this._renderPlaylistAsync(list)
     toast(`已加载 ${list.length} 个本地视频，点击列表播放`, 'success')
   },
 
@@ -103,5 +103,16 @@ export const localLibraryMethods = {
       return
     }
     this._addLocalFiles(files)
+  },
+
+  /**
+   * 异步渲染播放列表，使用 requestIdleCallback 避免阻塞主线程
+   */
+  _renderPlaylistAsync(list) {
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(() => this.renderPlaylist(), { timeout: 1000 })
+    } else {
+      setTimeout(() => this.renderPlaylist(), 0)
+    }
   },
 }

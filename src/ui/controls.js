@@ -104,12 +104,8 @@ export class PlayerUI {
 
     // 文件选择
     this.fileInput.addEventListener('change', () => {
-      if (this.fileInput.files.length) this.loadFiles(this.fileInput.files)
+      if (this.fileInput.files.length) this._addLocalFiles(this.fileInput.files)
       this.fileInput.value = ''
-    })
-    this.subInput.addEventListener('change', () => {
-      if (this.subInput.files.length) this.loadSubtitleFile(this.subInput.files[0])
-      this.subInput.value = ''
     })
     this.folderInput.addEventListener('change', () => {
       if (this.folderInput.files.length) this._addLocalFiles(this.folderInput.files)
