@@ -131,16 +131,12 @@ export class PlayerUI {
 
     // 鼠标移动显示 UI 并重置隐藏计时器（桌面浏览器不自动隐藏）
     this.playerEl.addEventListener('pointermove', () => {
-      if (this._isDesktop) {
-        this.playerEl.classList.remove('ui-hidden')
-      } else {
-        this.playerEl.classList.remove('ui-hidden')
-        clearTimeout(this.uiTimer)
-        if (!this.player.paused) {
-          this.uiTimer = setTimeout(() => {
-            this.playerEl.classList.add('ui-hidden')
-          }, 3000)
-        }
+      this.playerEl.classList.remove('ui-hidden')
+      clearTimeout(this.uiTimer)
+      if (!this._isDesktop && !this.player.paused) {
+        this.uiTimer = setTimeout(() => {
+          this.playerEl.classList.add('ui-hidden')
+        }, 3000)
       }
     })
 
@@ -448,27 +444,12 @@ export class PlayerUI {
   _pokeUI() {
     this.playerEl.classList.remove('ui-hidden')
     clearTimeout(this.uiTimer)
-    // 桌面浏览器不自动隐藏
-    if (this._isDesktop) return
-    if (!this.player.paused) {
-      this.uiTimer = setTimeout(() => {
-        this.playerEl.classList.add('ui-hidden')
-      }, 3000)
-    }
   }
 
   _toggleUI() {
     if (this.playerEl.classList.contains('ui-hidden')) {
       this.playerEl.classList.remove('ui-hidden')
       clearTimeout(this.uiTimer)
-    } else if (!this._isDesktop) {
-      this.playerEl.classList.add('ui-hidden')
-      clearTimeout(this.uiTimer)
-      if (!this.player.paused) {
-        this.uiTimer = setTimeout(() => {
-          this.playerEl.classList.add('ui-hidden')
-        }, 3000)
-      }
     }
   }
 
