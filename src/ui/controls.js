@@ -37,7 +37,6 @@ export class PlayerUI {
     this._bindTouchGestures()
     this._applyPrefs()
     // 默认不显示首屏，直接展示播放列表（移动端折叠为抽屉按钮）
-    this.emptyState.classList.add('hidden')
     this._syncPlaylistLayout()
     this._initLocalLibrary()
   }

@@ -76,7 +76,7 @@ export const domBuilderMethods = {
       el('div', { class: 'tp-meta' }, ''),
     ])
 
-    this.playerEl.append(this.video, this.subLayer, gradT, gradB, this.emptyState, this.spinner, this.centerZone, this.topBar, this.controlBar, this.menu, this.tp)
+    this.playerEl.append(this.video, this.subLayer, gradT, gradB, this.spinner, this.centerZone, this.topBar, this.controlBar, this.menu, this.tp)
 
     // 播放列表面板
     this.plPanel = el('aside', { class: 'playlist-panel' }, [
