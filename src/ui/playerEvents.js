@@ -77,9 +77,6 @@ export const playerEventsMethods = {
         const m = this.player.muted
         this.btnMute.innerHTML = ''
         this.btnMute.append(icon(m || this.player.volume === 0 ? 'volumeMute' : 'volume', 19))
-        this.volRange.value = String(this.player.volume)
-        // 更新音量指示条
-        this._updateVolIndicator()
       },
       onRateChange: () => {
         this.btnSpeed.textContent = `${this.player.rate}x`

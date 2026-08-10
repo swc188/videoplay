@@ -92,16 +92,6 @@ export class PlayerUI {
     this.centerZone.addEventListener('pointercancel', () => this._gestureUp())
     this.centerZone.addEventListener('dblclick', (e) => { e.preventDefault() })
 
-    // 进度条
-    this._bindProgress()
-
-    // 音量
-    this.volRange.addEventListener('input', () => {
-      const v = parseFloat(this.volRange.value)
-      this.player.setVolume(v, false)
-      this._updateVolIndicator()
-    })
-
     // 文件选择
     this.fileInput.addEventListener('change', () => {
       if (this.fileInput.files.length) this.loadFiles(this.fileInput.files)
@@ -427,17 +417,6 @@ export class PlayerUI {
     }
   }
 
-
-  /* ================= 音量指示条 ================= */
-  _updateVolIndicator() {
-    if (!this.volIndicator) return
-    const volume = this.player.muted ? 0 : this.player.volume
-    const bars = this.volIndicator.querySelectorAll('.vol-bar')
-    const activeCount = Math.round(volume * 10)
-    bars.forEach((bar, i) => {
-      bar.classList.toggle('active', i < activeCount)
-    })
-  }
 
   /* ================= UI 显隐 ================= */
   _pokeUI() {
