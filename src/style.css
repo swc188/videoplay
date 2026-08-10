@@ -84,6 +84,10 @@ svg { display: block; }
   border: none;
   max-width: none;
   max-height: none;
+  width: 100vw;
+  height: 100vh;
+  aspect-ratio: unset;
+  padding-bottom: 0;
 }
 
 .player video {
