@@ -12,9 +12,6 @@ export const gestureMethods = {
       this._initTouchStartX = e.clientX
       this._initTouchStartY = e.clientY
     }
-    if (e.pointerType === 'touch' && e.isPrimary) {
-      this._gestureDown(e)
-    }
 
     try { this.centerZone.setPointerCapture(e.pointerId) } catch {}
   },
