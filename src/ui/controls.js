@@ -71,9 +71,9 @@ export class PlayerUI {
         const centerX = (touch1.clientX + touch2.clientX) / 2
         const centerY = (touch1.clientY + touch2.clientY) / 2
 
-        // 计算拖动偏移 - 修复方向：手指向右移动，视频向左移动
-        const moveDeltaX = this._initTouchCenterX - centerX
-        const moveDeltaY = this._initTouchCenterY - centerY
+        // 计算拖动偏移 - 修复方向：手指向右移动，视频向右移动
+        const moveDeltaX = centerX - this._initTouchCenterX
+        const moveDeltaY = centerY - this._initTouchCenterY
 
         // 应用缩放到 controls.js
         this._zoomLevel = newZoom
