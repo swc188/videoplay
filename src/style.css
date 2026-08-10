@@ -93,6 +93,16 @@ svg { display: block; }
   height: 100%;
   object-fit: contain;
   background: #000;
+  transition: transform 0.2s ease;
+}
+
+.player.zoomed video {
+  pointer-events: auto;
+  cursor: zoom-in;
+}
+
+.player.zoomed {
+  cursor: zoom-out;
 }
 
 /* 兼容旧版 Safari 的 container query */

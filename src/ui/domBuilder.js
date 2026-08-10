@@ -157,6 +157,8 @@ export const domBuilderMethods = {
       this.btnSub = this._ctrlBtn('subtitle', 'subtitle', '字幕', 'subtitle', true),
       this.btnPip = this._ctrlBtn('pip', 'pip', '画中画', 'pip', true),
       this.btnShot = this._ctrlBtn('capture', 'camera', '截图', 'capture', true),
+      this.btnZoomIn = this._ctrlBtn('zoom-in', 'zoomIn', '放大', 'zoom-in', true),
+      this.btnZoomOut = this._ctrlBtn('zoom-out', 'zoomOut', '缩小', 'zoom-out', true),
       this.btnLoop = this._ctrlBtn('loop', 'repeat', '循环播放', 'loop', false),
       this.btnFs = this._ctrlBtn('fullscreen', 'fullscreen', '全屏', 'fullscreen', false),
     ])

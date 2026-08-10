@@ -23,10 +23,18 @@ export class PlayerUI {
     this.tapTimer = null
     this.dragMode = false
     this.scrubbing = false
+    this._isDesktop = !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 2))
+    this._zoomLevel = 1
+    this._zoomOffsetX = 0
+    this._zoomOffsetY = 0
+    this._initTouchStartX = 0
+    this._initTouchStartY = 0
+    this._initTouchDist = 0
     this._build()
     this.player = new Player(this.video, this._playerEvents())
     this.subtitle = new SubtitleManager(this.subLayer, this.video)
     this._bind()
+    this._bindTouchGestures()
     this._applyPrefs()
     // 默认不显示首屏，直接展示播放列表（移动端折叠为抽屉按钮）
     this.emptyState.classList.add('hidden')
@@ -36,6 +44,37 @@ export class PlayerUI {
 
   /* ================= DOM 构建 ================= */
   // 见 domBuilder.js（_build / _topBtn / _buildControlBar / _ctrlBtn / _buildUrlDialog）
+
+  /* ================= 双指手势事件绑定 ================= */
+  _bindTouchGestures() {
+    this.playerEl.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        const touch1 = e.touches[0]
+        const touch2 = e.touches[1]
+        this._initTouchDist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY)
+      }
+    }, { passive: true })
+
+    this.playerEl.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && this._initTouchDist > 0) {
+        e.preventDefault()
+        const touch1 = e.touches[0]
+        const touch2 = e.touches[1]
+        const dist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY)
+        const scale = dist / this._initTouchDist
+        const newZoom = Math.max(1, Math.min(5, this._zoomLevel * scale))
+        const centerX = (touch1.clientX + touch2.clientX) / 2
+        const centerY = (touch1.clientY + touch2.clientY) / 2
+        this._applyZoom(newZoom, centerX, centerY)
+      }
+    }, { passive: false })
+
+    this.playerEl.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) {
+        this._initTouchDist = 0
+      }
+    })
+  }
 
   /* ================= 事件绑定 ================= */
   _bind() {
@@ -90,14 +129,18 @@ export class PlayerUI {
     // 键盘快捷键
     window.addEventListener('keydown', (e) => this._shortcut(e))
 
-    // 鼠标移动显示 UI 并重置隐藏计时器
+    // 鼠标移动显示 UI 并重置隐藏计时器（桌面浏览器不自动隐藏）
     this.playerEl.addEventListener('pointermove', () => {
-      this.playerEl.classList.remove('ui-hidden')
-      clearTimeout(this.uiTimer)
-      if (!this.player.paused) {
-        this.uiTimer = setTimeout(() => {
-          this.playerEl.classList.add('ui-hidden')
-        }, 3000)
+      if (this._isDesktop) {
+        this.playerEl.classList.remove('ui-hidden')
+      } else {
+        this.playerEl.classList.remove('ui-hidden')
+        clearTimeout(this.uiTimer)
+        if (!this.player.paused) {
+          this.uiTimer = setTimeout(() => {
+            this.playerEl.classList.add('ui-hidden')
+          }, 3000)
+        }
       }
     })
 
@@ -248,6 +291,8 @@ export class PlayerUI {
         PiP.request(this.player.video).catch(() => toast('当前环境不支持画中画', 'error'))
         break
       case 'capture': this.capture(); break
+      case 'zoom-in': this._zoomIn(); break
+      case 'zoom-out': this._zoomOut(); break
       case 'loop': this.toggleLoop(); break
       case 'fullscreen': this.toggleFullscreen(); break
       case 'open-file': this.fileInput.click(); break
@@ -267,6 +312,20 @@ export class PlayerUI {
     a.download = `capture-${Date.now()}.png`
     a.click()
     toast('截图已保存')
+  }
+
+  _zoomIn() {
+    const newZoom = Math.min(5, this._zoomLevel * 1.25)
+    const centerX = this.playerEl.clientWidth / 2
+    const centerY = this.playerEl.clientHeight / 2
+    this._applyZoom(newZoom, centerX, centerY)
+  }
+
+  _zoomOut() {
+    const newZoom = Math.max(1, this._zoomLevel / 1.25)
+    const centerX = this.playerEl.clientWidth / 2
+    const centerY = this.playerEl.clientHeight / 2
+    this._applyZoom(newZoom, centerX, centerY)
   }
 
   toggleLoop() {
@@ -374,11 +433,23 @@ export class PlayerUI {
   }
 
 
+  /* ================= 音量指示条 ================= */
+  _updateVolIndicator() {
+    if (!this.volIndicator) return
+    const volume = this.player.muted ? 0 : this.player.volume
+    const bars = this.volIndicator.querySelectorAll('.vol-bar')
+    const activeCount = Math.round(volume * 10)
+    bars.forEach((bar, i) => {
+      bar.classList.toggle('active', i < activeCount)
+    })
+  }
+
   /* ================= UI 显隐 ================= */
   _pokeUI() {
     this.playerEl.classList.remove('ui-hidden')
     clearTimeout(this.uiTimer)
-    // 只在播放时设置自动隐藏计时器
+    // 桌面浏览器不自动隐藏
+    if (this._isDesktop) return
     if (!this.player.paused) {
       this.uiTimer = setTimeout(() => {
         this.playerEl.classList.add('ui-hidden')
@@ -390,10 +461,9 @@ export class PlayerUI {
     if (this.playerEl.classList.contains('ui-hidden')) {
       this.playerEl.classList.remove('ui-hidden')
       clearTimeout(this.uiTimer)
-    } else {
+    } else if (!this._isDesktop) {
       this.playerEl.classList.add('ui-hidden')
       clearTimeout(this.uiTimer)
-      // 隐藏后若仍在播放，3 秒后再次隐藏
       if (!this.player.paused) {
         this.uiTimer = setTimeout(() => {
           this.playerEl.classList.add('ui-hidden')
