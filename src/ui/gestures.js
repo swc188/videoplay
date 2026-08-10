@@ -11,6 +11,7 @@ export const gestureMethods = {
     if (e.pointerType === 'touch' && e.isPrimary) {
       this._initTouchStartX = e.clientX
       this._initTouchStartY = e.clientY
+      this._initTouchDist = 0
     }
 
     try { this.centerZone.setPointerCapture(e.pointerId) } catch {}
@@ -25,11 +26,37 @@ export const gestureMethods = {
 
       if (this._initTouchDist === 0) {
         this._initTouchDist = dist
-      } else {
-        const scale = dist / this._initTouchDist
-        const newZoom = Math.max(1, Math.min(5, this._zoomLevel * scale))
-        this._applyZoom(newZoom, e.clientX, e.clientY)
+        this._initTouchCenterX = (touch1.clientX + touch2.clientX) / 2
+        this._initTouchCenterY = (touch1.clientY + touch2.clientY) / 2
       }
+
+      // 计算中心点移动距离
+      const centerX = (touch1.clientX + touch2.clientX) / 2
+      const centerY = (touch1.clientY + touch2.clientY) / 2
+      const moveDeltaX = this._initTouchCenterX - centerX
+      const moveDeltaY = this._initTouchCenterY - centerY
+
+      // 计算缩放
+      const scale = dist / this._initTouchDist
+      const newZoom = Math.max(1, Math.min(5, this._zoomLevel * scale))
+
+      // 应用缩放和位移
+      this._zoomLevel = newZoom
+      const video = this.player.video
+      const rect = this.playerEl.getBoundingClientRect()
+      const x = this._initTouchCenterX - rect.left - rect.width / 2
+      const y = this._initTouchCenterY - rect.top - rect.height / 2
+
+      // 基础偏移（缩放中心）
+      let baseOffsetX = x * (1 - 1 / newZoom)
+      let baseOffsetY = y * (1 - 1 / newZoom)
+
+      // 加上拖动偏移
+      this._zoomOffsetX = baseOffsetX + moveDeltaX
+      this._zoomOffsetY = baseOffsetY + moveDeltaY
+
+      this._applyZoomTransform()
+      this.playerEl.classList.add('zoomed')
       return
     }
 
@@ -43,7 +70,6 @@ export const gestureMethods = {
     }
     if (this.dragMode && Math.abs(dx) > Math.abs(dy) && this.player.duration) {
       const ddx = e.clientX - this._gLastX
-      const ratio = ddx / this.playerEl.clientWidth
       // 拖动视频内容，不是跳转进度
       const video = this.player.video
       const currentTransform = video.style.transform || ''
