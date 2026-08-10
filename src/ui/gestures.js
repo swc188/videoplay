@@ -48,6 +48,11 @@ export const gestureMethods = {
       this.player.seekBy(ratio * this.player.duration * 0.3)
       this._gLastX = e.clientX
       this._pokeUI()
+      
+      // 更新进度条指示器
+      this._scrubRatio = Math.max(0, Math.min(1, (this.player.currentTime / this.player.duration)))
+      this.playBar.style.width = `${this._scrubRatio * 100}%`
+      this.thumb.style.left = `${this._scrubRatio * 100}%`
     }
   },
 

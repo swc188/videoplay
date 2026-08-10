@@ -355,6 +355,7 @@ svg { display: block; }
 }
 .progress-wrap.scrubbing .progress-tooltip,
 .progress-wrap:hover .progress-tooltip { display: block; }
+.progress-wrap.scrubbing .progress-thumb { transform: translate(-50%, -50%) scale(1); }
 
 /* ============ Volume ============ */
 .volume-box { display: flex; align-items: center; }
