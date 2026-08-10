@@ -214,11 +214,14 @@ export class PlayerUI {
 
     // 全局错误捕获：任何未捕获异常都提示，避免「闪退为空」后页面静默空白
     window.addEventListener('error', (e) => {
-      if (e && e.message && e.message !== 'Script error.') toast(`页面错误：${e.message}`, 'error')
+      if (e && e.message && e.message !== 'Script error.') {
+        // 脱敏处理：不展示内部实现细节
+        toast('播放器发生错误，请刷新重试', 'error')
+      }
     })
     window.addEventListener('unhandledrejection', (e) => {
       const msg = e && e.reason ? (e.reason.message || String(e.reason)) : '未知错误'
-      if (msg && msg !== 'aborted') toast(`运行错误：${msg}`, 'error')
+      if (msg && msg !== 'aborted') toast('播放器发生错误，请刷新重试', 'error')
     })
 
     // 布局切换时自动同步播放列表开关
@@ -414,7 +417,22 @@ export class PlayerUI {
         const item = items[idx]
         const row = document.createElement('div')
         row.className = 'pl-item' + (item.id === this.currentItem?.id ? ' active' : '')
-        row.innerHTML = `<span class="pl-index">${idx + 1}</span><span class="pl-title">${item.title}</span><span class="pl-type">${item.kind || (item.source.type === 'file' ? 'file' : 'net')}</span><button class="pl-del" type="button" title="移除">✕</button>`
+        // 安全渲染：使用 textContent 避免 XSS
+        const indexSpan = document.createElement('span')
+        indexSpan.className = 'pl-index'
+        indexSpan.textContent = idx + 1
+        const titleSpan = document.createElement('span')
+        titleSpan.className = 'pl-title'
+        titleSpan.textContent = item.title
+        const typeSpan = document.createElement('span')
+        typeSpan.className = 'pl-type'
+        typeSpan.textContent = item.kind || (item.source.type === 'file' ? 'file' : 'net')
+        const delBtn = document.createElement('button')
+        delBtn.className = 'pl-del'
+        delBtn.type = 'button'
+        delBtn.title = '移除'
+        delBtn.textContent = '✕'
+        row.append(indexSpan, titleSpan, typeSpan, delBtn)
         row.dataset.id = item.id
         fragment.append(row)
       }

@@ -200,6 +200,17 @@ export const domBuilderMethods = {
     dialog.querySelector('.btn-primary').addEventListener('click', () => {
       const url = urlInput.value.trim()
       if (!url) { toast('请输入媒体地址', 'error'); return }
+      // 安全校验：仅允许 http/https 协议
+      try {
+        const parsed = new URL(url)
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          toast('仅支持 http/https 协议的媒体地址', 'error')
+          return
+        }
+      } catch {
+        toast('无效的媒体地址格式', 'error')
+        return
+      }
       this.urlMask.classList.remove('open')
       this.loadUrl(url, nameInput.value.trim() || undefined)
       urlInput.value = ''

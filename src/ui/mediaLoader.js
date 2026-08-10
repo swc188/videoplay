@@ -150,7 +150,19 @@ export const mediaLoaderMethods = {
   },
 
   async loadSubtitleFile(file) {
+    // 安全校验：限制字幕文件大小（最大 10MB）
+    const MAX_SUBTITLE_SIZE = 10 * 1024 * 1024
+    if (file.size > MAX_SUBTITLE_SIZE) {
+      toast('字幕文件过大（最大 10MB）', 'error')
+      return
+    }
     const text = await file.text()
+    // 安全校验：限制行数（最大 10000 行）
+    const lines = text.split('\n')
+    if (lines.length > 10000) {
+      toast('字幕文件行数过多（最大 10000 行）', 'error')
+      return
+    }
     const n = this.subtitle.loadText(text)
     this.subtitle.setEnabled(true)
     this.subtitle.update()

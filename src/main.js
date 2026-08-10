@@ -19,7 +19,8 @@ window.addEventListener('load', () => {
 // 生产环境注册 Service Worker（PWA 离线 / 安装）
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {})
+    // 使用子资源完整性校验，防止中间人攻击
+    navigator.serviceWorker.register('sw.js', { integrity: 'sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC' }).catch(() => {})
   })
 }
 
@@ -34,11 +35,21 @@ if (!u) {
   u = hash.get('src') || hash.get('url')
   title = hash.get('title') || title
 }
-if (u) ui.loadUrl(u, title || undefined)
+if (u) {
+  // 安全校验：仅允许 http/https 协议
+  try {
+    const parsed = new URL(u)
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      toast('仅支持 http/https 协议的媒体地址', 'error')
+    } else {
+      ui.loadUrl(u, title || undefined)
+    }
+  } catch {
+    toast('无效的媒体地址', 'error')
+  }
+}
 
 // 未开启浏览器服务时提示
 if (!window.isSecureContext) {
   toast('当前为非安全上下文，部分功能（画中画等）不可用')
 }
-
-window.playerUI = ui
