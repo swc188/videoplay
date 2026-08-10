@@ -9,7 +9,7 @@ import { localLibraryMethods } from './localLibrary.js'
 import { playerEventsMethods } from './playerEvents.js'
 import { domBuilderMethods } from './domBuilder.js'
 import { loadPrefs } from './prefs.js'
-import { el, icon, toast, fmtTime } from '../utils.js'
+import { el, icon, toast, fmtTime, escapeHTML, isValidMediaUrl } from '../utils.js'
 
 export class PlayerUI {
   constructor(rootEl) {
@@ -355,6 +355,9 @@ export class PlayerUI {
   }
 
   async toggleFullscreen() {
+    if (!document.fullscreenEnabled) {
+      return toast('当前环境不支持全屏', 'error')
+    }
     if (document.fullscreenElement) {
       await document.exitFullscreen?.()?.catch(() => {})
     } else {
@@ -423,7 +426,7 @@ export class PlayerUI {
         indexSpan.textContent = idx + 1
         const titleSpan = document.createElement('span')
         titleSpan.className = 'pl-title'
-        titleSpan.textContent = item.title
+        titleSpan.textContent = item.title ? escapeHTML(item.title) : ''
         const typeSpan = document.createElement('span')
         typeSpan.className = 'pl-type'
         typeSpan.textContent = item.kind || (item.source.type === 'file' ? 'file' : 'net')
@@ -499,7 +502,8 @@ export class PlayerUI {
   }
 
   _handleError(err) {
-    const msg = err?.message || '加载失败'
+    // 脱敏处理：不展示内部实现细节
+    const msg = err?.message ? '加载失败' : '加载失败'
     toast(msg, 'error')
     if (this.currentItem && this.currentItem.source.type === 'file' && !this.transcodeAbort) {
       toast('尝试使用 ffmpeg.wasm 转码播放…')

@@ -163,6 +163,12 @@ export const mediaLoaderMethods = {
       toast('字幕文件行数过多（最大 10000 行）', 'error')
       return
     }
+    // 安全校验：限制单行长度（最大 1000 字符）
+    const MAX_LINE_LENGTH = 1000
+    if (lines.some(line => line.length > MAX_LINE_LENGTH)) {
+      toast('字幕文件包含过长的行', 'error')
+      return
+    }
     const n = this.subtitle.loadText(text)
     this.subtitle.setEnabled(true)
     this.subtitle.update()

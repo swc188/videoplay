@@ -1,4 +1,4 @@
-import { uid, extname } from '../utils.js'
+import { uid, extname, isValidMediaUrl } from '../utils.js'
 
 const LS_KEY = 'uvp:playlist'
 
@@ -92,7 +92,7 @@ export class Playlist {
       const arr = JSON.parse(raw)
       if (Array.isArray(arr)) {
         for (const it of arr) {
-          if (it && it.url) {
+          if (it && it.url && isValidMediaUrl(it.url)) {
             this.addUrl(it.url, it.title)
           }
         }

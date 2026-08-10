@@ -4,7 +4,6 @@ export const el = (tag, props = {}, children = []) => {
     if (k === 'class') node.className = v
     else if (k === 'style' && typeof v === 'object') Object.assign(node.style, v)
     else if (k.startsWith('on') && typeof v === 'function') node.addEventListener(k.slice(2), v)
-    else if (k === 'html') node.innerHTML = v
     else if (v !== null && v !== undefined) node.setAttribute(k, v)
   }
   for (const c of [].concat(children)) {
@@ -113,6 +112,23 @@ export const baseName = (url = '') => {
   } catch {
     return url
   }
+}
+
+// URL 协议校验：仅允许 http/https
+export const isValidMediaUrl = (url) => {
+  try {
+    const parsed = new URL(url)
+    return ['http:', 'https:'].includes(parsed.protocol)
+  } catch {
+    return false
+  }
+}
+
+// XSS 防护：对 HTML 特殊字符进行转义
+export const escapeHTML = (str) => {
+  const div = document.createElement('div')
+  div.textContent = str
+  return div.innerHTML
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 10)

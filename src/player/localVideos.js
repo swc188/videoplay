@@ -38,7 +38,12 @@ function idbPut(db, value, key) {
 export async function loadDirHandle() {
   try {
     const db = await openDB()
-    return await idbGet(db, KEY)
+    const handle = await idbGet(db, KEY)
+    // 验证句柄有效性
+    if (!handle || typeof handle.requestPermission !== 'function') {
+      return null
+    }
+    return handle
   } catch {
     return null
   }
