@@ -136,22 +136,6 @@ export const domBuilderMethods = {
       el('div', { class: 'spacer', style: 'flex:1' }),
       this.volumeBox = el('div', { class: 'volume-box' }, [
         this.btnMute = this._ctrlBtn('mute', 'volume', '静音', 'mute', false),
-        // 音量指示条 - 10个堆叠长方形
-        this.volIndicator = el('div', { class: 'volume-indicator' }, [
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-          el('div', { class: 'vol-bar' }),
-        ]),
-        el('div', { class: 'vol-range' }, [
-          this.volRange = el('input', { type: 'range', min: '0', max: '1', step: '0.01', value: '1' }),
-        ]),
       ]),
       this.btnSpeed = el('button', { class: 'ctrl-btn speed-chip', type: 'button', 'data-action': 'menu-speed' }, '1x'),
       this.btnSub = this._ctrlBtn('subtitle', 'subtitle', '字幕', 'subtitle', true),
