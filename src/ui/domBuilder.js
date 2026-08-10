@@ -126,7 +126,7 @@ export const domBuilderMethods = {
     this.timeCur = el('span', { class: 'cur' }, '0:00')
     this.timeDur = el('span', { class: 'dur' }, '0:00')
 
-    const row = el('div', { class: 'controls-row' }, [
+    const row = el('div', { class: 'media-controls-row' }, [
       this._ctrlBtn('prev', 'next', '上一个', 'prev', false),
       this.btnPlay,
       this._ctrlBtn('next', 'prev', '下一个', 'next', false),
