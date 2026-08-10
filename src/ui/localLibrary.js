@@ -85,15 +85,38 @@ export const localLibraryMethods = {
   },
 
   async _loadFromHandle(handle) {
-    toast('正在扫描本地视频…')
+    let progressTimer = null
+    let progressCount = 0
+    const showProgress = () => {
+      progressCount++
+      const msgs = [
+        '正在扫描本地视频... 10%',
+        '正在扫描本地视频... 20%',
+        '正在扫描本地视频... 30%',
+        '正在扫描本地视频... 40%',
+        '正在扫描本地视频... 50%',
+        '正在扫描本地视频... 60%',
+        '正在扫描本地视频... 70%',
+        '正在扫描本地视频... 80%',
+        '正在扫描本地视频... 90%',
+        '正在扫描本地视频... 95%',
+      ]
+      toast(msgs[Math.min(progressCount, msgs.length - 1)], 'info')
+    }
+    progressTimer = setInterval(showProgress, 500)
+    showProgress()
+
     const stats = { scanned: 0, skipped: 0, errors: 0 }
     let files
     try {
       files = await scanDirectory(handle, [], stats)
     } catch (e) {
+      clearInterval(progressTimer)
       toast(`扫描失败：${e?.message || e?.name || '未知错误'}`, 'error')
       return
     }
+    clearInterval(progressTimer)
+
     if (!files.length) {
       if (stats.scanned > 0) {
         toast('该文件夹下没有找到支持播放的视频文件', 'error')
