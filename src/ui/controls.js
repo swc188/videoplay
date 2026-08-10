@@ -51,6 +51,10 @@ export class PlayerUI {
         const touch1 = e.touches[0]
         const touch2 = e.touches[1]
         this._initTouchDist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY)
+        this._initTouchCenterX = (touch1.clientX + touch2.clientX) / 2
+        this._initTouchCenterY = (touch1.clientY + touch2.clientY) / 2
+        this._initTouchStartX = touch1.clientX
+        this._initTouchStartY = touch1.clientY
       }
     }, { passive: true })
 
@@ -62,9 +66,27 @@ export class PlayerUI {
         const dist = Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY)
         const scale = dist / this._initTouchDist
         const newZoom = Math.max(1, Math.min(5, this._zoomLevel * scale))
+
+        // 计算中心点
         const centerX = (touch1.clientX + touch2.clientX) / 2
         const centerY = (touch1.clientY + touch2.clientY) / 2
-        this._applyZoom(newZoom, centerX, centerY)
+
+        // 计算拖动偏移
+        const moveDeltaX = this._initTouchCenterX - centerX
+        const moveDeltaY = this._initTouchCenterY - centerY
+
+        // 应用缩放到 controls.js
+        this._zoomLevel = newZoom
+        const rect = this.playerEl.getBoundingClientRect()
+        const x = this._initTouchCenterX - rect.left - rect.width / 2
+        const y = this._initTouchCenterY - rect.top - rect.height / 2
+        const baseOffsetX = x * (1 - 1 / newZoom)
+        const baseOffsetY = y * (1 - 1 / newZoom)
+
+        this._zoomOffsetX = baseOffsetX + moveDeltaX
+        this._zoomOffsetY = baseOffsetY + moveDeltaY
+        this._applyZoomTransform()
+        this.playerEl.classList.add('zoomed')
       }
     }, { passive: false })
 
