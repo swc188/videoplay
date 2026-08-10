@@ -61,6 +61,7 @@ export class PlayerUI {
     this.volRange.addEventListener('input', () => {
       const v = parseFloat(this.volRange.value)
       this.player.setVolume(v, false)
+      this._updateVolIndicator()
     })
 
     // 文件选择
@@ -367,7 +368,7 @@ export class PlayerUI {
         const id = row.dataset.id
         const item = items.find(i => i.id === id)
         if (item && item.id !== this.currentItem?.id) this.playItem(id)
-        this.plList.focus({ preventScroll: true })
+        // 不获取焦点，避免播放列表显示灰色边框
       }
     }
   }
@@ -377,6 +378,7 @@ export class PlayerUI {
   _pokeUI() {
     this.playerEl.classList.remove('ui-hidden')
     clearTimeout(this.uiTimer)
+    // 只在播放时设置自动隐藏计时器
     if (!this.player.paused) {
       this.uiTimer = setTimeout(() => {
         this.playerEl.classList.add('ui-hidden')
@@ -391,6 +393,7 @@ export class PlayerUI {
     } else {
       this.playerEl.classList.add('ui-hidden')
       clearTimeout(this.uiTimer)
+      // 隐藏后若仍在播放，3 秒后再次隐藏
       if (!this.player.paused) {
         this.uiTimer = setTimeout(() => {
           this.playerEl.classList.add('ui-hidden')

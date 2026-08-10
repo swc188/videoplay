@@ -21,7 +21,8 @@ export const gestureMethods = {
     if (this.dragMode && Math.abs(dx) > Math.abs(dy) && this.player.duration) {
       const ddx = e.clientX - this._gLastX
       const ratio = ddx / this.playerEl.clientWidth
-      this.player.seekBy(ratio * this.player.duration)
+      // 减小步长，从 1:1 改为 0.3:1，避免进度跳动过大
+      this.player.seekBy(ratio * this.player.duration * 0.3)
       this._gLastX = e.clientX
       this._pokeUI()
     }

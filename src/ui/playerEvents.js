@@ -19,13 +19,11 @@ export const playerEventsMethods = {
         this.btnPlay.append(icon('pause', 20))
         this.bigPlay.innerHTML = ''
         this.bigPlay.append(icon('pause', 30))
-        // 播放开始后 3 秒自动隐藏 UI
+        // 播放时显示 UI 并移除焦点
         clearTimeout(this.uiTimer)
-        this.uiTimer = setTimeout(() => {
-          if (!this.player.paused) {
-            this.playerEl.classList.add('ui-hidden')
-          }
-        }, 3000)
+        this.playerEl.classList.remove('ui-hidden')
+        // 移除播放列表焦点，避免灰色边框
+        if (this.plList) this.plList.blur()
       },
       onPause: () => {
         this.playerEl.classList.remove('playing')
@@ -80,6 +78,8 @@ export const playerEventsMethods = {
         this.btnMute.innerHTML = ''
         this.btnMute.append(icon(m || this.player.volume === 0 ? 'volumeMute' : 'volume', 19))
         this.volRange.value = String(this.player.volume)
+        // 更新音量指示条
+        this._updateVolIndicator()
       },
       onRateChange: () => {
         this.btnSpeed.textContent = `${this.player.rate}x`
