@@ -44,15 +44,17 @@ export const gestureMethods = {
     if (this.dragMode && Math.abs(dx) > Math.abs(dy) && this.player.duration) {
       const ddx = e.clientX - this._gLastX
       const ratio = ddx / this.playerEl.clientWidth
-      // 减小步长，从 1:1 改为 0.3:1，避免进度跳动过大
-      this.player.seekBy(ratio * this.player.duration * 0.3)
+      // 拖动视频内容，不是跳转进度
+      const video = this.player.video
+      const currentTransform = video.style.transform || ''
+      const match = currentTransform.match(/translate\((-?[\d.]+)px,\s*([-]?\d+px)\)/)
+      let offsetX = match ? parseFloat(match[1]) : 0
+      let offsetY = match ? parseFloat(match[2]) : 0
+      offsetX -= ddx
       this._gLastX = e.clientX
+      this._zoomOffsetX = offsetX
+      this._applyZoomTransform()
       this._pokeUI()
-      
-      // 更新进度条指示器
-      this._scrubRatio = Math.max(0, Math.min(1, (this.player.currentTime / this.player.duration)))
-      this.playBar.style.width = `${this._scrubRatio * 100}%`
-      this.thumb.style.left = `${this._scrubRatio * 100}%`
     }
   },
 
