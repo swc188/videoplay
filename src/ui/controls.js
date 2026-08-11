@@ -293,6 +293,23 @@ export class PlayerUI {
     this.playBar.style.width = `${ratio * 100}%`
     this.thumb.style.left = `${ratio * 100}%`
   }
+  
+  _bindPlaylistScroll() {
+    // 阻止播放列表滚动事件冒泡到播放器
+    this.plList.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.pl-item')) return
+      e.stopPropagation()
+    }, true)
+    this.plList.addEventListener('pointermove', (e) => {
+      e.stopPropagation()
+    }, true)
+    this.plList.addEventListener('pointerup', (e) => {
+      e.stopPropagation()
+    }, true)
+    this.plList.addEventListener('pointercancel', (e) => {
+      e.stopPropagation()
+    }, true)
+  }
 
   /* ================= 播放器事件 ================= */
   // 见 playerEvents.js（_playerEvents 回调集）
@@ -423,6 +440,9 @@ export class PlayerUI {
     // 分块渲染：大列表（数千个视频）一次性构建 DOM 会阻塞主线程数十秒
     this._plRenderToken = (this._plRenderToken || 0) + 1
     const token = this._plRenderToken
+    
+    // 修复播放列表滚动条拖动问题：阻止滚动事件冒泡到播放器
+    this._bindPlaylistScroll()
     this.plList.innerHTML = ''
     const items = this.playlist.items
     if (!items.length) {
