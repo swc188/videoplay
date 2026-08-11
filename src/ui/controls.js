@@ -371,7 +371,7 @@ export class PlayerUI {
   }
 
   _zoomIn() {
-    const newZoom = Math.min(5, this._zoomLevel * 1.25)
+    const newZoom = this._zoomLevel * 1.25
     const centerX = this.playerEl.clientWidth / 2
     const centerY = this.playerEl.clientHeight / 2
     this._applyZoom(newZoom, centerX, centerY)

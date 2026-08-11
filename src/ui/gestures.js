@@ -38,7 +38,7 @@ export const gestureMethods = {
 
       // 计算缩放
       const scale = dist / this._initTouchDist
-      const newZoom = Math.max(1, Math.min(5, this._zoomLevel * scale))
+      const newZoom = Math.max(1, this._zoomLevel * scale)
 
       // 应用缩放和位移
       this._zoomLevel = newZoom
