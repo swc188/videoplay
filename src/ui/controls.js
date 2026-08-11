@@ -235,37 +235,57 @@ export class PlayerUI {
   _bindProgress() {
     const wrap = this.playerEl.querySelector('.progress-wrap')
     let dragging = false
+    let pointerId = null
 
     const clientXFromEvent = (e) => (e.touches ? e.touches[0].clientX : e.clientX)
     const apply = (e) => {
       const rect = wrap.getBoundingClientRect()
-      const ratio = Math.max(0, Math.min(1, (clientXFromEvent(e) - rect.left) / rect.width))
+      const x = clientXFromEvent(e)
+      const ratio = Math.max(0, Math.min(1, (x - rect.left) / rect.width))
       return ratio
     }
 
-    wrap.addEventListener('pointerdown', (e) => {
+    const startDrag = (e) => {
+      e.stopPropagation()
       dragging = true
+      pointerId = e.pointerId
       this.scrubbing = true
       wrap.classList.add('scrubbing')
-      wrap.setPointerCapture(e.pointerId)
+      try { wrap.setPointerCapture(pointerId) } catch {}
       this._previewScrub(apply(e))
-    })
-    wrap.addEventListener('pointermove', (e) => {
+    }
+
+    const moveDrag = (e) => {
+      if (!dragging || e.pointerId !== pointerId) return
+      e.stopPropagation()
       const ratio = apply(e)
       this.progTooltip.textContent = fmtTime(ratio * this.player.duration)
       this.progTooltip.style.left = `${ratio * 100}%`
-      if (dragging) this._previewScrub(ratio)
-    })
-    const end = () => {
-      if (dragging) {
-        this.player.seek(this.player.duration * this._scrubRatio)
-      }
+      this._previewScrub(ratio)
+    }
+
+    const endDrag = (e) => {
+      if (!dragging) return
+      if (e && e.pointerId !== pointerId) return
       dragging = false
       this.scrubbing = false
+      pointerId = null
       wrap.classList.remove('scrubbing')
+      try { wrap.releasePointerCapture(pointerId) } catch {}
+      if (this._scrubRatio != null) {
+        this.player.seek(this.player.duration * this._scrubRatio)
+      }
     }
-    wrap.addEventListener('pointerup', end)
-    wrap.addEventListener('pointercancel', end)
+
+    wrap.addEventListener('pointerdown', startDrag)
+    wrap.addEventListener('pointermove', moveDrag)
+    wrap.addEventListener('pointerup', endDrag)
+    wrap.addEventListener('pointercancel', endDrag)
+    
+    // 同时监听 playerEl 的事件，确保捕获到所有 pointer
+    this.playerEl.addEventListener('pointermove', moveDrag)
+    this.playerEl.addEventListener('pointerup', endDrag)
+    this.playerEl.addEventListener('pointercancel', endDrag)
   }
 
   _previewScrub(ratio) {
