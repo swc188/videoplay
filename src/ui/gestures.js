@@ -33,8 +33,8 @@ export const gestureMethods = {
       // 计算中心点移动距离
       const centerX = (touch1.clientX + touch2.clientX) / 2
       const centerY = (touch1.clientY + touch2.clientY) / 2
-      const moveDeltaX = this._initTouchCenterX - centerX
-      const moveDeltaY = this._initTouchCenterY - centerY
+      const moveDeltaX = centerX - this._initTouchCenterX
+      const moveDeltaY = centerY - this._initTouchCenterY
 
       // 计算缩放
       const scale = dist / this._initTouchDist
@@ -42,7 +42,6 @@ export const gestureMethods = {
 
       // 应用缩放和位移
       this._zoomLevel = newZoom
-      const video = this.player.video
       const rect = this.playerEl.getBoundingClientRect()
       const x = this._initTouchCenterX - rect.left - rect.width / 2
       const y = this._initTouchCenterY - rect.top - rect.height / 2
