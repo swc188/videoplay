@@ -3,7 +3,7 @@ import { transcodeFile } from '../player/transcoder.js'
 import { baseName, extname, toast } from '../utils.js'
 
 // 流式协议走专用引擎（hls.js/mpegts.js），原生解码失败不转码
-const EXTS_NO_TRANSCODE = ['m3u8', 'mpd', 'flv', 'ts']
+const EXTS_NO_TRANSCODE = ['m3u8', 'mpd']
 
 export const mediaLoaderMethods = {
   async loadUrl(url, title) {
