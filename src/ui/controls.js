@@ -384,6 +384,24 @@ export class PlayerUI {
     this._applyZoom(newZoom, centerX, centerY)
   }
 
+  _applyZoom(zoom, centerX, centerY) {
+    this._zoomLevel = zoom
+    const video = this.player.video
+    const rect = this.playerEl.getBoundingClientRect()
+    const x = centerX - rect.left - rect.width / 2
+    const y = centerY - rect.top - rect.height / 2
+    this._zoomOffsetX = x * (1 - 1 / zoom)
+    this._zoomOffsetY = y * (1 - 1 / zoom)
+    this._applyZoomTransform()
+    this.playerEl.classList.add('zoomed')
+  }
+
+  _applyZoomTransform() {
+    const video = this.player.video
+    const transform = `scale(${this._zoomLevel}) translate(${this._zoomOffsetX / this._zoomLevel}px, ${this._zoomOffsetY / this._zoomLevel}px)`
+    video.style.transform = transform
+  }
+
   toggleLoop() {
     const on = !this.player.video.loop
     this.player.setLoop(on)
