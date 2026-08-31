@@ -90,6 +90,8 @@ export function isSupportedLocalFile(file) {
   const ext = extname(file.name)
   if (!ext) return false
   if (ext === 'm3u8' || ext === 'mpd') return false
+  // flv/ts 由 mpegts.js 引擎处理，即使浏览器无法识别 MIME 类型也应支持
+  if (ext === 'flv' || ext === 'ts') return true
   const type = (file.type || '').toLowerCase()
   if (type.startsWith('video/') || type.startsWith('audio/')) return true
   if (isNativeSupported(ext)) return true
