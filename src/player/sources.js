@@ -166,7 +166,9 @@ export function attachEngine(video, { kind, url }) {
           autoCleanupSourceBuffer: true,
           seekType: 'range',
         })
-        player.on(mpegts.Events.ERROR, () => fail(new Error('FLV/TS 加载失败')))
+        player.on(mpegts.Events.ERROR, (e, data) => {
+          if (data.fatal) fail(new Error('FLV/TS 加载失败'))
+        })
         player.attachMediaElement(video)
         player.load()
         player.play()
