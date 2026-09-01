@@ -150,7 +150,11 @@ export class Player {
   }
 
   get paused() { return this.video.paused }
-  get duration() { return Number.isFinite(this.video.duration) ? this.video.duration : 0 }
+  get duration() {
+    const engineDuration = this.engine?.duration
+    if (engineDuration != null && Number.isFinite(engineDuration)) return engineDuration
+    return Number.isFinite(this.video.duration) ? this.video.duration : 0
+  }
   get currentTime() { return this.video.currentTime }
   get ended() { return this.video.ended }
   get rate() { return this.video.playbackRate }
