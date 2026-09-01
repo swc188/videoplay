@@ -136,14 +136,15 @@ export class Player {
 
   seek(t) {
     if (!Number.isFinite(t)) return
-    const clamped = Math.max(0, Math.min(t, this.duration || 0))
+    const d = this.duration || Infinity
+    const clamped = Math.max(0, Math.min(t, d))
     if (this.engine?.seek) {
       this.engine.seek(clamped)
     } else {
       this.video.currentTime = clamped
     }
   }
-  seekBy(delta) { this.seek((this.video.currentTime || 0) + delta) }
+  seekBy(delta) { this.seek(this.currentTime + delta) }
   stepFrames(n = 1) {
     if (this.video.paused) this.video.currentTime += (16 / 1000) * n
   }
