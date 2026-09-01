@@ -169,6 +169,12 @@ export function attachEngine(video, { kind, url }) {
         player.on(mpegts.Events.ERROR, (e, data) => {
           if (data.fatal) fail(new Error('FLV/TS 加载失败'))
         })
+        player.on(mpegts.Events.MEDIA_INFO, (e, data) => {
+          if (data.duration && Number.isFinite(data.duration)) {
+            video.duration = data.duration
+            video.dispatchEvent(new Event('durationchange'))
+          }
+        })
         player.attachMediaElement(video)
         player.load()
         player.play()
