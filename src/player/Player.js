@@ -135,7 +135,13 @@ export class Player {
   toggle() { return this.video.paused ? this.play() : this.pause() }
 
   seek(t) {
-    if (Number.isFinite(t)) this.video.currentTime = Math.max(0, Math.min(t, this.duration || 0))
+    if (!Number.isFinite(t)) return
+    const clamped = Math.max(0, Math.min(t, this.duration || 0))
+    if (this.engine?.seek) {
+      this.engine.seek(clamped)
+    } else {
+      this.video.currentTime = clamped
+    }
   }
   seekBy(delta) { this.seek((this.video.currentTime || 0) + delta) }
   stepFrames(n = 1) {

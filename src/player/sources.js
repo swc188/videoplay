@@ -169,7 +169,11 @@ export function attachEngine(video, { kind, url }) {
         player.attachMediaElement(video)
         player.load()
         player.play()
-        done({ engine: player, destroy: () => { try { player.destroy() } catch {} } })
+        done({
+          engine: player,
+          destroy: () => { try { player.destroy() } catch {} },
+          seek: (t) => { player.currentTime = t },
+        })
       }).catch(() => fail(new Error('FLV/TS 引擎加载失败')))
     } else {
       native()
