@@ -1,0 +1,38 @@
+# Universal Player · 全能视频播放器
+
+> 开源、免安装的浏览器视频播放器。原生支持 MP4、WebM、HLS(m3u8)、DASH(mpd)、FLV；不常见格式由 ffmpeg.wasm 在浏览器端实时转码兜底。Web、桌面、移动端同源体验。
+
+- 官网：https://swc188.github.io/videoplay/
+- 类型：Web 应用 / PWA
+- 价格：免费、开源
+- 平台：Windows / macOS / Linux / Android / iOS
+- 浏览器要求：支持 WebAssembly、WebCodecs、SharedArrayBuffer 的现代浏览器
+
+## 支持的格式
+- MP4（含 H.264 / H.265 / AV1）
+- WebM（VP8 / VP9 / AV1）
+- HLS（m3u8 / ts，直播与点播）
+- DASH（mpd）
+- FLV（含旧版监控录像、直播流）
+- 其他私有或老旧格式：ffmpeg.wasm 浏览器端转码
+
+## 核心特性
+- 免安装：纯 Web 应用，无客户端、无浏览器插件
+- 跨端：Web、桌面、移动端同源
+- 隐私安全：转码在本地完成，视频不离开用户设备
+- PWA：可安装到桌面 / 主屏，离线可用
+- 开源免费：无广告、无追踪、无注册
+
+## 适用场景
+- 在线播放 HLS / DASH 直播与点播流
+- 播放 FLV 监控录像与平台直播二次分发
+- 浏览器内播放任意冷门 / 私有格式视频
+- 短视频本地回放，无需安装客户端
+
+## FAQ
+1. 支持哪些视频格式？ MP4 / WebM / HLS / DASH / FLV 原生 + ffmpeg.wasm 兜底任意格式。
+2. 需要安装客户端或插件吗？ 不需要。打开网页即用，支持 PWA。
+3. ffmpeg.wasm 转码原理？ FFmpeg 编译为 WebAssembly，在浏览器内通过 SharedArrayBuffer 与主线程交换数据，软解后通过 WebCodecs / MSE 输出。转码在本地完成，视频不上传。
+4. 支持移动端吗？ 支持。PC、平板、手机同源；iOS 16.4+ 与 Android 主流浏览器均已验证。
+5. 是否免费？ 完全免费、无广告、无需注册、开源。
+6. 能播放直播流或监控录像吗？ 可以。粘贴 m3u8 / mpd 链接即可播放 HLS / DASH 流；FLV 直播流通过 ffmpeg.wasm 转码后实时输出。
